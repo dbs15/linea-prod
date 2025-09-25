@@ -1,0 +1,34 @@
+FACTURA DISPONIBLE - {{ company.name }}
+
+Estimado {{ client.first_name }} {{ client.last_name }},
+
+Le informamos que la factura correspondiente a su pedido ha sido generada:
+
+DETALLES DE LA FACTURA:
+======================
+Número de Factura: {{ invoice.invoice_number }}
+Número de Pedido: {{ order.order_number }}
+Fecha de Emisión: {{ invoice.issue_date|date:"d/m/Y" }}
+Fecha de Vencimiento: {{ invoice.due_date|date:"d/m/Y" }}
+Subtotal: ${{ invoice.subtotal }}
+IVA ({{ invoice.tax_rate }}%): ${{ invoice.tax_amount }}
+Total a Pagar: ${{ invoice.total_amount }}
+
+INFORMACIÓN DE PAGO:
+===================
+Por favor realice el pago antes de la fecha de vencimiento para evitar recargos.
+Método de Pago: Transferencia bancaria o efectivo en nuestras oficinas.
+
+Una vez realizado el pago, podrá recoger su pedido en nuestras instalaciones.
+
+INFORMACIÓN DE CONTACTO:
+========================
+{{ company.name }}
+Teléfono: {{ company.phone }}
+Email: {{ company.email }}
+
+¡Gracias por su preferencia!
+
+---
+Este es un mensaje automático. Por favor no responda a este correo.
+{{ company.name }} - Sistema de Maquila de Café

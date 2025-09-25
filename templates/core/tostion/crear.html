@@ -1,0 +1,967 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Proceso de Tostión - Pedido #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header con breadcrumbs -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-4">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="flex items-center space-x-4">
+                        <li>
+                            <div>
+                                <a href="{% url 'core:dashboard' %}" class="text-gray-400 hover:text-gray-500">
+                                    <i class="fas fa-home"></i>
+                                    <span class="sr-only">Dashboard</span>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                <a href="{% url 'core:tostion_list' %}" class="ml-4 text-gray-500 hover:text-gray-700">Tostión</a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                <span class="ml-4 text-orange-600 font-medium">Proceso de Tostión</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="bg-white shadow rounded-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Proceso de Tostión Paso a Paso</h1>
+                        <p class="mt-1 text-gray-600">Pedido #{{ order.order_number }} - {{ order.client.full_name }}</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                            <i class="fas fa-fire mr-2"></i>
+                            Paso {{ current_step_number }} de 4 ({{ current_step }})
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div class="mt-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Progreso del proceso</span>
+                        <span class="text-sm text-gray-500">{{ current_step_number }} de 4 pasos completados</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-orange-500 h-2 rounded-full transition-all duration-300" style="width: {{ progress_percentage }}%;"></div>
+                    </div>
+                    <div class="flex justify-between mt-2 text-xs text-gray-500">
+                        <span class="{% if current_step_number >= 1 %}text-orange-600 font-medium{% endif %}">Recepción</span>
+                        <span class="{% if current_step_number >= 2 %}text-orange-600 font-medium{% endif %}">Configuración</span>
+                        <span class="{% if current_step_number >= 3 %}text-orange-600 font-medium{% endif %}">Monitoreo</span>
+                        <span class="{% if current_step_number >= 4 %}text-orange-600 font-medium{% endif %}">Finalización</span>
+                    </div>
+                </div>
+
+                <!-- Información del pedido -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-weight text-white text-sm"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-500">Cantidad</p>
+                                <p class="text-lg font-semibold text-gray-900">{{ order.quantity_kg }} kg</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-coffee text-white text-sm"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-500">Tipo de Café</p>
+                                <p class="text-lg font-semibold text-gray-900">{{ order.get_coffee_type_display }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-calendar text-white text-sm"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-500">Fecha Comprometida</p>
+                                <p class="text-lg font-semibold text-gray-900">{{ order.committed_date|date:"d/m/Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario por pasos -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" id="tostionForm" class="divide-y divide-gray-200">
+                {% csrf_token %}
+                <input type="hidden" name="current_step" value="{{ current_step }}">
+
+                <!-- Paso 1: Recepción -->
+                <div class="step-content {% if current_step != 'reception' %}hidden{% endif %}" data-step="reception">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-10 h-10 bg-blue-500 rounded-full">
+                                    <span class="text-white font-bold">1</span>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Recepción de Materia Prima</h3>
+                                <p class="text-sm text-gray-500">Verifica la cantidad recibida contra la etiqueta de recepción</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.received_quantity_kg }}
+                                <label class="block text-xs text-gray-500 mt-1">Cantidad Recibida (KG)</label>
+                                <div class="mt-1 text-sm text-gray-600">
+                                    Pedido original: <span class="font-medium">{{ order.quantity_kg }} kg</span>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Verificación</label>
+                                <div class="text-2xl font-bold" id="quantityDifference">
+                                    0.00 kg
+                                </div>
+                                <div class="text-sm text-gray-500" id="differenceStatus">
+                                    Sin diferencia
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                            <div class="flex">
+                                <i class="fas fa-info-circle text-blue-400 mt-1"></i>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">
+                                        <strong>Instrucciones:</strong> Verifique que la cantidad recibida coincida con la etiqueta QR del pedido.
+                                        Registre cualquier discrepancia para trazabilidad completa.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Configuración -->
+                <div class="step-content {% if current_step != 'setup' %}hidden{% endif %}" data-step="setup">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-10 h-10 bg-orange-500 rounded-full">
+                                    <span class="text-white font-bold">2</span>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Configuración del Proceso</h3>
+                                <p class="text-sm text-gray-500">Selecciona el equipo y configura los parámetros iniciales</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.toasting_equipment }}
+                                <label class="block text-xs text-gray-500 mt-1">Equipo de Tostión</label>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Capacidad del Equipo</label>
+                                <div class="text-2xl font-bold text-gray-900" id="equipmentCapacity">
+                                    Selecciona equipo
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    Capacidad máxima
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                {{ form.initial_temperature_celsius }}
+                                <label class="block text-xs text-gray-500 mt-1">Temperatura Inicial (°C)</label>
+                                <div class="mt-1 text-sm text-gray-600">
+                                    Rango: 100-200°C
+                                </div>
+                            </div>
+                            <div>
+                                {{ form.target_temperature_celsius }}
+                                <label class="block text-xs text-gray-500 mt-1">Temperatura Objetivo (°C)</label>
+                                <div class="mt-1 text-sm text-gray-600">
+                                    Rango: 150-250°C
+                                </div>
+                            </div>
+                            <div>
+                                {{ form.estimated_time_minutes }}
+                                <label class="block text-xs text-gray-500 mt-1">Tiempo Estimado (min)</label>
+                                <div class="mt-1 text-sm text-gray-600">
+                                    Rango: 5-60 min
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            {{ form.roast_type }}
+                            <label class="block text-xs text-gray-500 mt-1">Tipo de Tueste</label>
+                        </div>
+
+                        <div class="mt-4 p-4 bg-orange-50 rounded-lg">
+                            <div class="flex">
+                                <i class="fas fa-lightbulb text-orange-400 mt-1"></i>
+                                <div class="ml-3">
+                                    <p class="text-sm text-orange-700">
+                                        <strong>Recomendaciones:</strong> Para café excelso, usa tostión media con temperatura objetivo de 200°C.
+                                        Ajusta según el perfil de sabor deseado.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 3: Monitoreo -->
+                <div class="step-content {% if current_step != 'monitoring' %}hidden{% endif %}" data-step="monitoring">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-10 h-10 bg-green-500 rounded-full">
+                                    <span class="text-white font-bold">3</span>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Monitoreo en Tiempo Real</h3>
+                                <p class="text-sm text-gray-500">Actualiza los parámetros durante el proceso de tostión</p>
+                            </div>
+                        </div>
+
+                        <!-- Información del proceso actual -->
+                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Estado del Proceso</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-orange-600" id="currentTemp">--</div>
+                                    <div class="text-xs text-gray-500">Temperatura (°C)</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-blue-600" id="elapsedTime">--</div>
+                                    <div class="text-xs text-gray-500">Tiempo (min)</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-600" id="currentHumidity">--</div>
+                                    <div class="text-xs text-gray-500">Humedad (%)</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-red-600" id="weightLoss">--</div>
+                                    <div class="text-xs text-gray-500">Pérdida (kg)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.current_temperature_celsius }}
+                                <label class="block text-xs text-gray-500 mt-1">Temperatura Actual (°C)</label>
+                            </div>
+                            <div>
+                                {{ form.current_humidity_percentage }}
+                                <label class="block text-xs text-gray-500 mt-1">Humedad Actual (%)</label>
+                            </div>
+                        </div>
+
+                        <!-- Temporizador y controles -->
+                        <div class="mt-6 bg-white border rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-sm font-medium text-gray-700">Control de Tiempo</h4>
+                                <button type="button" id="startTimer" class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600">
+                                    <i class="fas fa-play mr-1"></i>Iniciar
+                                </button>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-4xl font-mono font-bold text-gray-900" id="timerDisplay">00:00</div>
+                                <div class="text-sm text-gray-500 mt-1">Tiempo transcurrido</div>
+                            </div>
+                        </div>
+
+                        <!-- Muestras de calidad -->
+                        <div class="mt-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Muestras de Calidad</h4>
+                            <div class="space-y-3" id="qualitySamples">
+                                <!-- Las muestras se agregarán dinámicamente -->
+                            </div>
+                            <button type="button" id="addSampleBtn" class="mt-3 px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
+                                <i class="fas fa-plus mr-1"></i>Agregar Muestra
+                            </button>
+                        </div>
+
+                        <div class="mt-4 p-4 bg-green-50 rounded-lg">
+                            <div class="flex">
+                                <i class="fas fa-chart-line text-green-400 mt-1"></i>
+                                <div class="ml-3">
+                                    <p class="text-sm text-green-700">
+                                        <strong>Monitoreo:</strong> Actualiza cada 2 minutos. Registra cambios en temperatura, humedad y apariencia del grano.
+                                        Toma muestras para evaluar olor, color y densidad.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 4: Finalización -->
+                <div class="step-content {% if current_step != 'completion' %}hidden{% endif %}" data-step="completion">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-10 h-10 bg-purple-500 rounded-full">
+                                    <span class="text-white font-bold">4</span>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Finalización del Proceso</h3>
+                                <p class="text-sm text-gray-500">Registra los resultados finales y calcula el rendimiento</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.processed_quantity_kg }}
+                                <label class="block text-xs text-gray-500 mt-1">Kilos Finales Tostados</label>
+                                <div class="mt-1 text-sm text-gray-600">
+                                    Recibidos: <span class="font-medium">{{ toasting_process.received_quantity_kg|default:order.quantity_kg }} kg</span>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Rendimiento Calculado</label>
+                                <div class="text-2xl font-bold text-green-600" id="calculatedYield">
+                                    --
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    Porcentaje de rendimiento
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            {{ form.final_grain_quality }}
+                            <label class="block text-xs text-gray-500 mt-1">Calidad Final del Grano</label>
+                        </div>
+
+                        <div class="mt-4">
+                            {{ form.final_quality_notes }}
+                            <label class="block text-xs text-gray-500 mt-1">Observaciones Finales</label>
+                        </div>
+
+                        <div class="mt-4">
+                            {{ form.notes }}
+                            <label class="block text-xs text-gray-500 mt-1">Notas Adicionales</label>
+                        </div>
+
+                        <div class="mt-4 p-4 bg-purple-50 rounded-lg">
+                            <div class="flex">
+                                <i class="fas fa-check-circle text-purple-400 mt-1"></i>
+                                <div class="ml-3">
+                                    <p class="text-sm text-purple-700">
+                                        <strong>Finalización:</strong> Registra los kilos finales tostados. El sistema calculará automáticamente
+                                        el rendimiento y actualizará el estado del pedido a "Tostión Completa".
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navegación entre pasos -->
+                <div class="px-6 py-4 bg-gray-50 flex items-center justify-between">
+                    <div>
+                        {% if current_step_number > 1 %}
+                        <button type="button" id="prevStepBtn"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Anterior
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="flex space-x-3">
+                        <a href="{% url 'core:tostion_list' %}"
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancelar
+                        </a>
+                        {% if current_step_number < 4 %}
+                        <button type="button" id="nextStepBtn" onclick="handleNextStepClick(); return false;"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                            Siguiente
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                        {% else %}
+                        <button type="submit"
+                                class="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="fas fa-check mr-2"></i>
+                            Completar Tostión
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <i class="fas fa-check text-green-600"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mt-4">Proceso de Tostión Completado</h3>
+        <div class="mt-2 px-7 py-3">
+            <p class="text-sm text-gray-500">
+                El proceso de tostión ha sido registrado correctamente.
+                El pedido avanzará al siguiente estado.
+            </p>
+        </div>
+        <div class="flex items-center px-4 py-3">
+            <button id="viewOrderBtn"
+                    class="px-4 py-2 bg-orange-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-300">
+                Ver Pedido
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // FUNCIONES GLOBALES - Definidas fuera de DOMContentLoaded para estar disponibles inmediatamente
+    window.handleNextStepClick = function() {
+        console.log('🎯 BOTÓN SIGUIENTE CLICKEADO (función global)');
+        handleNextStep();
+        return false;
+    };
+
+    // Función principal de manejo del botón siguiente
+    function handleNextStep() {
+        console.log('=== PROCESANDO BOTÓN SIGUIENTE ===');
+        const currentStep = '{{ current_step }}';
+        console.log('Paso actual:', currentStep);
+
+        // Validar el paso actual antes de continuar
+        if (!validateCurrentStep()) {
+            console.log('❌ Validación fallida, no se puede continuar');
+            return false;
+        }
+
+        const steps = ['reception', 'setup', 'monitoring', 'completion'];
+        const currentIndex = steps.indexOf(currentStep);
+        console.log('Índice del paso actual:', currentIndex);
+
+        if (currentIndex < steps.length - 1) {
+            const nextStep = steps[currentIndex + 1];
+            console.log('Siguiente paso:', nextStep);
+
+            // Redirigir directamente a la URL del siguiente paso
+            const currentUrl = window.location.pathname;
+            const nextUrl = `${currentUrl}?step=${nextStep}`;
+            console.log('Redirigiendo a:', nextUrl);
+            window.location.href = nextUrl;
+            return true;
+        } else {
+            console.log('❌ Ya estamos en el último paso');
+            return false;
+        }
+    }
+
+    // Función de validación del paso actual
+    function validateCurrentStep() {
+        console.log('🔍 Validando paso actual');
+        const currentStep = '{{ current_step }}';
+        let isValid = true;
+        const errors = [];
+
+        if (currentStep === 'reception') {
+            const receivedInput = document.getElementById('id_received_quantity_kg');
+            console.log('Campo received_quantity_kg encontrado:', !!receivedInput);
+            if (receivedInput) {
+                const received = parseFloat(receivedInput.value);
+                console.log('Cantidad recibida:', received);
+                if (!received || received <= 0) {
+                    errors.push('La cantidad recibida debe ser mayor a 0');
+                    isValid = false;
+                }
+            } else {
+                errors.push('Campo de cantidad recibida no encontrado');
+                isValid = false;
+            }
+        } else if (currentStep === 'setup') {
+            const equipmentInput = document.getElementById('id_toasting_equipment');
+            console.log('Campo toasting_equipment encontrado:', !!equipmentInput);
+            if (equipmentInput) {
+                const equipment = equipmentInput.value;
+                console.log('Equipo seleccionado:', equipment);
+                if (!equipment) {
+                    errors.push('Debe seleccionar un equipo de tostión');
+                    isValid = false;
+                }
+            }
+
+            const initialTempInput = document.getElementById('id_initial_temperature_celsius');
+            if (initialTempInput) {
+                const initialTemp = parseFloat(initialTempInput.value);
+                console.log('Temperatura inicial:', initialTemp);
+                if (!initialTemp || initialTemp < 100 || initialTemp > 200) {
+                    errors.push('La temperatura inicial debe estar entre 100°C y 200°C');
+                    isValid = false;
+                }
+            }
+
+            const targetTempInput = document.getElementById('id_target_temperature_celsius');
+            if (targetTempInput) {
+                const targetTemp = parseFloat(targetTempInput.value);
+                console.log('Temperatura objetivo:', targetTemp);
+                if (!targetTemp || targetTemp < 150 || targetTemp > 250) {
+                    errors.push('La temperatura objetivo debe estar entre 150°C y 250°C');
+                    isValid = false;
+                }
+            }
+
+            const estimatedTimeInput = document.getElementById('id_estimated_time_minutes');
+            if (estimatedTimeInput) {
+                const estimatedTime = parseFloat(estimatedTimeInput.value);
+                console.log('Tiempo estimado:', estimatedTime);
+                if (!estimatedTime || estimatedTime < 5 || estimatedTime > 60) {
+                    errors.push('El tiempo estimado debe estar entre 5 y 60 minutos');
+                    isValid = false;
+                }
+            }
+        }
+
+        if (!isValid) {
+            console.log('❌ Errores de validación:', errors);
+            alert('Errores en el formulario:\n' + errors.join('\n'));
+        } else {
+            console.log('✅ Validación exitosa');
+        }
+
+        return isValid;
+    }
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== JAVASCRIPT CARGADO PARA TOSTIÓN ===');
+    console.log('URL actual:', window.location.href);
+    console.log('Paso actual desde template:', '{{ current_step }}');
+    console.log('current_step_number desde template:', '{{ current_step_number }}');
+
+    const form = document.getElementById('tostionForm');
+    const currentStep = '{{ current_step }}';
+    const orderQuantity = parseFloat('{{ order.quantity_kg|default:0 }}');
+    const receivedQuantity = parseFloat('{{ toasting_process.received_quantity_kg|default:order.quantity_kg|default:0 }}');
+    let timerInterval = null;
+    let startTime = null;
+    let qualitySamples = [];
+
+    console.log('Variables inicializadas correctamente');
+
+    // Configuración de equipos
+    const equipmentConfig = {
+        'industrial_200kg': { capacity: 200, name: 'Industrial 200kg' },
+        'industrial_500kg': { capacity: 500, name: 'Industrial 500kg' },
+        'artisanal_50kg': { capacity: 50, name: 'Artesanal 50kg' },
+        'experimental_10kg': { capacity: 10, name: 'Experimental 10kg' }
+    };
+
+    // Función de validación del paso actual
+    function validateCurrentStep() {
+        console.log('🔍 Validando paso actual:', currentStep);
+        let isValid = true;
+        const errors = [];
+
+        if (currentStep === 'reception') {
+            const receivedInput = document.getElementById('id_received_quantity_kg');
+            console.log('Campo received_quantity_kg encontrado:', !!receivedInput);
+            if (receivedInput) {
+                const received = parseFloat(receivedInput.value);
+                console.log('Cantidad recibida:', received);
+                if (!received || received <= 0) {
+                    errors.push('La cantidad recibida debe ser mayor a 0');
+                    isValid = false;
+                }
+            } else {
+                errors.push('Campo de cantidad recibida no encontrado');
+                isValid = false;
+            }
+        } else if (currentStep === 'setup') {
+            const equipmentInput = document.getElementById('id_toasting_equipment');
+            console.log('Campo toasting_equipment encontrado:', !!equipmentInput);
+            if (equipmentInput) {
+                const equipment = equipmentInput.value;
+                console.log('Equipo seleccionado:', equipment);
+                if (!equipment) {
+                    errors.push('Debe seleccionar un equipo de tostión');
+                    isValid = false;
+                }
+            }
+
+            const initialTempInput = document.getElementById('id_initial_temperature_celsius');
+            if (initialTempInput) {
+                const initialTemp = parseFloat(initialTempInput.value);
+                console.log('Temperatura inicial:', initialTemp);
+                if (!initialTemp || initialTemp < 100 || initialTemp > 200) {
+                    errors.push('La temperatura inicial debe estar entre 100°C y 200°C');
+                    isValid = false;
+                }
+            }
+
+            const targetTempInput = document.getElementById('id_target_temperature_celsius');
+            if (targetTempInput) {
+                const targetTemp = parseFloat(targetTempInput.value);
+                console.log('Temperatura objetivo:', targetTemp);
+                if (!targetTemp || targetTemp < 150 || targetTemp > 250) {
+                    errors.push('La temperatura objetivo debe estar entre 150°C y 250°C');
+                    isValid = false;
+                }
+            }
+
+            const estimatedTimeInput = document.getElementById('id_estimated_time_minutes');
+            if (estimatedTimeInput) {
+                const estimatedTime = parseFloat(estimatedTimeInput.value);
+                console.log('Tiempo estimado:', estimatedTime);
+                if (!estimatedTime || estimatedTime < 5 || estimatedTime > 60) {
+                    errors.push('El tiempo estimado debe estar entre 5 y 60 minutos');
+                    isValid = false;
+                }
+            }
+        }
+
+        if (!isValid) {
+            console.log('❌ Errores de validación:', errors);
+            alert('Errores en el formulario:\n' + errors.join('\n'));
+        } else {
+            console.log('✅ Validación exitosa');
+        }
+
+        return isValid;
+    }
+
+    // Navegación entre pasos
+    function showStep(stepName) {
+        console.log('Mostrando paso:', stepName);
+        document.querySelectorAll('.step-content').forEach(step => {
+            step.classList.add('hidden');
+        });
+        const targetStep = document.querySelector(`[data-step="${stepName}"]`);
+        if (targetStep) {
+            targetStep.classList.remove('hidden');
+            const stepInput = document.querySelector('input[name="current_step"]');
+            if (stepInput) {
+                stepInput.value = stepName;
+            }
+        }
+    }
+
+    // Función para manejar el botón siguiente
+    function handleNextStep() {
+        console.log('=== BOTÓN SIGUIENTE CLICKEADO ===');
+        console.log('Paso actual:', currentStep);
+
+        // Validar el paso actual antes de continuar
+        if (!validateCurrentStep()) {
+            console.log('❌ Validación fallida, no se puede continuar');
+            return false;
+        }
+
+        const steps = ['reception', 'setup', 'monitoring', 'completion'];
+        const currentIndex = steps.indexOf(currentStep);
+        console.log('Índice del paso actual:', currentIndex);
+
+        if (currentIndex < steps.length - 1) {
+            const nextStep = steps[currentIndex + 1];
+            console.log('Siguiente paso:', nextStep);
+
+            // Redirigir directamente a la URL del siguiente paso
+            const currentUrl = window.location.pathname;
+            const nextUrl = `${currentUrl}?step=${nextStep}`;
+            console.log('Redirigiendo a:', nextUrl);
+            window.location.href = nextUrl;
+            return true;
+        } else {
+            console.log('❌ Ya estamos en el último paso');
+            return false;
+        }
+    }
+
+    // Función para manejar el botón anterior
+    function handlePrevStep() {
+        console.log('=== BOTÓN ANTERIOR CLICKEADO ===');
+
+        const steps = ['reception', 'setup', 'monitoring', 'completion'];
+        const currentIndex = steps.indexOf(currentStep);
+        console.log('Paso actual:', currentStep, 'Índice:', currentIndex);
+
+        if (currentIndex > 0) {
+            const prevStep = steps[currentIndex - 1];
+            console.log('Cambiando a paso anterior:', prevStep);
+
+            // Actualizar el campo oculto
+            const stepInput = document.querySelector('input[name="current_step"]');
+            if (stepInput) {
+                stepInput.value = prevStep;
+                console.log('Campo current_step actualizado a:', prevStep);
+            }
+
+            // Enviar el formulario para procesar el cambio de paso
+            if (form) {
+                console.log('Enviando formulario...');
+                form.submit();
+            }
+        }
+    }
+
+    // FUNCIONALIDADES ADICIONALES DEL FORMULARIO
+    console.log('=== INICIALIZANDO FUNCIONALIDADES ADICIONALES ===');
+
+    // FUNCIONALIDADES ADICIONALES
+    console.log('=== INICIALIZANDO FUNCIONALIDADES ADICIONALES ===');
+
+    // Cálculo de diferencia de cantidad (Paso 1)
+    const receivedQuantityInput = document.getElementById('id_received_quantity_kg');
+    if (receivedQuantityInput) {
+        const quantityDifference = document.getElementById('quantityDifference');
+        const differenceStatus = document.getElementById('differenceStatus');
+
+        function calculateDifference() {
+            const received = parseFloat(receivedQuantityInput.value) || 0;
+            const difference = received - orderQuantity;
+
+            if (quantityDifference) {
+                quantityDifference.textContent = difference.toFixed(2) + ' kg';
+            }
+
+            if (differenceStatus) {
+                if (Math.abs(difference) < 0.01) {
+                    differenceStatus.textContent = 'Sin diferencia';
+                    differenceStatus.className = 'text-sm text-gray-500';
+                } else if (difference > 0) {
+                    differenceStatus.textContent = 'Exceso de materia prima';
+                    differenceStatus.className = 'text-sm text-green-600';
+                } else {
+                    differenceStatus.textContent = 'Déficit de materia prima';
+                    differenceStatus.className = 'text-sm text-red-600';
+                }
+            }
+        }
+
+        receivedQuantityInput.addEventListener('input', calculateDifference);
+        calculateDifference(); // Calcular inicialmente
+    }
+
+    // Actualización de capacidad del equipo (Paso 2)
+    const equipmentSelect = document.getElementById('id_toasting_equipment');
+    if (equipmentSelect) {
+        const capacityDisplay = document.getElementById('equipmentCapacity');
+
+        equipmentSelect.addEventListener('change', function() {
+            const selectedEquipment = this.value;
+            if (selectedEquipment && equipmentConfig[selectedEquipment]) {
+                capacityDisplay.textContent = equipmentConfig[selectedEquipment].capacity + ' kg';
+            } else {
+                capacityDisplay.textContent = 'Selecciona equipo';
+            }
+        });
+    }
+
+    // Temporizador (Paso 3)
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startTimerBtn = document.getElementById('startTimer');
+
+    if (startTimerBtn && timerDisplay) {
+        startTimerBtn.addEventListener('click', function() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                this.innerHTML = '<i class="fas fa-play mr-1"></i>Iniciar';
+                this.classList.remove('bg-red-500', 'hover:bg-red-600');
+                this.classList.add('bg-green-500', 'hover:bg-green-600');
+            } else {
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 1000);
+                this.innerHTML = '<i class="fas fa-stop mr-1"></i>Detener';
+                this.classList.remove('bg-green-500', 'hover:bg-green-600');
+                this.classList.add('bg-red-500', 'hover:bg-red-600');
+            }
+        });
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            // Actualizar campo oculto de tiempo transcurrido
+            const timeInput = document.getElementById('id_current_time_elapsed_minutes');
+            if (timeInput) {
+                timeInput.value = Math.floor(elapsed / 60);
+            }
+        }
+    }
+
+    // Muestras de calidad (Paso 3)
+    const addSampleBtn = document.getElementById('addSampleBtn');
+    const qualitySamplesContainer = document.getElementById('qualitySamples');
+
+    if (addSampleBtn && qualitySamplesContainer) {
+        addSampleBtn.addEventListener('click', function() {
+            const sampleDiv = document.createElement('div');
+            sampleDiv.className = 'bg-gray-50 p-3 rounded-lg';
+            sampleDiv.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500">Tiempo (min)</label>
+                        <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded text-sm" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Olor</label>
+                        <select class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            <option>Seleccionar...</option>
+                            <option>Verde</option>
+                            <option>Cereal</option>
+                            <option>Caramelo</option>
+                            <option>Chocolate</option>
+                            <option>Quemado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Color</label>
+                        <select class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            <option>Seleccionar...</option>
+                            <option>Claro</option>
+                            <option>Medio</option>
+                            <option>Oscuro</option>
+                            <option>Muy Oscuro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <label class="block text-xs text-gray-500">Observaciones</label>
+                    <textarea class="w-full px-2 py-1 border border-gray-300 rounded text-sm" rows="2" placeholder="Observaciones de la muestra"></textarea>
+                </div>
+            `;
+            qualitySamplesContainer.appendChild(sampleDiv);
+        });
+    }
+
+    // Cálculo de rendimiento (Paso 4)
+    const processedQuantityInput = document.getElementById('id_processed_quantity_kg');
+    if (processedQuantityInput) {
+        const calculatedYield = document.getElementById('calculatedYield');
+
+        function calculateYield() {
+            const processed = parseFloat(processedQuantityInput.value) || 0;
+            if (processed > 0 && receivedQuantity > 0) {
+                const yieldPercentage = (processed / receivedQuantity) * 100;
+                calculatedYield.textContent = yieldPercentage.toFixed(1) + '%';
+            } else {
+                calculatedYield.textContent = '--';
+            }
+        }
+
+        processedQuantityInput.addEventListener('input', calculateYield);
+        calculateYield(); // Calcular inicialmente
+    }
+
+    // Validaciones del formulario
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        const errors = [];
+
+        // Validaciones según el paso actual
+        if (currentStep === 'reception') {
+            const received = parseFloat(receivedQuantityInput?.value);
+            if (!received || received <= 0) {
+                errors.push('La cantidad recibida debe ser mayor a 0');
+                isValid = false;
+            }
+        } else if (currentStep === 'setup') {
+            const equipment = document.getElementById('id_toasting_equipment')?.value;
+            if (!equipment) {
+                errors.push('Debe seleccionar un equipo de tostión');
+                isValid = false;
+            }
+
+            const initialTemp = parseFloat(document.getElementById('id_initial_temperature_celsius')?.value);
+            if (!initialTemp || initialTemp < 100 || initialTemp > 200) {
+                errors.push('La temperatura inicial debe estar entre 100°C y 200°C');
+                isValid = false;
+            }
+
+            const targetTemp = parseFloat(document.getElementById('id_target_temperature_celsius')?.value);
+            if (!targetTemp || targetTemp < 150 || targetTemp > 250) {
+                errors.push('La temperatura objetivo debe estar entre 150°C y 250°C');
+                isValid = false;
+            }
+
+            const estimatedTime = parseFloat(document.getElementById('id_estimated_time_minutes')?.value);
+            if (!estimatedTime || estimatedTime < 5 || estimatedTime > 60) {
+                errors.push('El tiempo estimado debe estar entre 5 y 60 minutos');
+                isValid = false;
+            }
+        } else if (currentStep === 'completion') {
+            const processed = parseFloat(processedQuantityInput?.value);
+            if (!processed || processed <= 0) {
+                errors.push('Los kilos procesados deben ser mayor a 0');
+                isValid = false;
+            }
+
+            const finalQuality = document.getElementById('id_final_grain_quality')?.value;
+            if (!finalQuality) {
+                errors.push('Debe seleccionar la calidad final del grano');
+                isValid = false;
+            }
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Errores en el formulario:\n' + errors.join('\n'));
+        }
+    });
+
+    // Mostrar modal de confirmación al completar
+    const confirmModal = document.getElementById('confirmModal');
+    const viewOrderBtn = document.getElementById('viewOrderBtn');
+
+    if (confirmModal && viewOrderBtn) {
+        // El modal se muestra desde la vista después del submit exitoso
+        viewOrderBtn.addEventListener('click', function() {
+            window.location.href = '{% url "core:pedido_list" %}';
+        });
+    }
+
+    // Verificación final de que las funciones están disponibles
+    console.log('=== VERIFICACIÓN FINAL ===');
+    console.log('handleNextStepClick definida:', typeof window.handleNextStepClick === 'function');
+    console.log('handleNextStep definida:', typeof handleNextStep === 'function');
+    console.log('validateCurrentStep definida:', typeof validateCurrentStep === 'function');
+});
+</script>
+{% endblock %}

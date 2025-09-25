@@ -1,0 +1,623 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Crear Nuevo Pedido - {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header con breadcrumbs -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-4">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="flex items-center space-x-4">
+                        <li>
+                            <div>
+                                <a href="{% url 'core:dashboard' %}" class="text-gray-400 hover:text-gray-500">
+                                    <i class="fas fa-home"></i>
+                                    <span class="sr-only">Dashboard</span>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                <a href="{% url 'core:pedido_list' %}" class="ml-4 text-gray-500 hover:text-gray-700">Pedidos</a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                <span class="ml-4 text-gray-900 font-medium">Crear Pedido</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header con progreso -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Crear Nuevo Pedido</h1>
+                    <p class="mt-2 text-gray-600">Registra un nuevo pedido de maquila para {{ company.name }}</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <i class="fas fa-plus-circle mr-2"></i>
+                        Paso <span id="currentStepNumber">1</span> de 4
+                    </span>
+                </div>
+            </div>
+
+            <!-- Barra de progreso -->
+            <div class="bg-white rounded-lg p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-700">Progreso</span>
+                    <span class="text-sm text-gray-500" id="progressText">25%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" id="progressBar" style="width: 25%"></div>
+                </div>
+                <div class="flex justify-between mt-2 text-xs text-gray-500">
+                    <span class="step-label active" data-step="1">Cliente</span>
+                    <span class="step-label" data-step="2">Producto</span>
+                    <span class="step-label" data-step="3">Entrega</span>
+                    <span class="step-label" data-step="4">Confirmación</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario multi-paso -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" id="pedidoForm">
+                {% csrf_token %}
+                <input type="hidden" name="current_step" id="currentStepInput" value="1">
+
+                <!-- Paso 1: Recepción de Materia Prima -->
+                <div class="step-content" id="step1">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
+                                    <i class="fas fa-box-open text-white text-sm"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Paso 1: Recepción de Materia Prima</h3>
+                                <p class="text-sm text-gray-500">Selecciona el cliente y registra la cantidad de café a procesar</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label for="id_client" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Cliente <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.client }}
+                                {% if form.client.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.client.errors.0 }}</p>
+                                {% endif %}
+                                <p class="mt-1 text-sm text-gray-500">
+                                    Si no encuentras el cliente, primero debes
+                                    <a href="{% url 'core:cliente_create' %}" class="text-blue-600 hover:text-blue-800 font-medium" target="_blank">
+                                        crear el cliente
+                                    </a>
+                                    desde el módulo de gestión de clientes.
+                                </p>
+                            </div>
+
+                            <div>
+                                {{ form.quantity_kg }}
+                                <label class="block text-xs text-gray-500 mt-1">Cantidad en KG <span class="text-red-500">*</span></label>
+                                {% if form.quantity_kg.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.quantity_kg.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Verificación</label>
+                                <div class="text-sm text-gray-600">
+                                    <div id="quantityValidation" class="mb-2">
+                                        <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                        Cantidad válida
+                                    </div>
+                                    <div id="clientValidation">
+                                        <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                        Cliente seleccionado
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Información del Producto -->
+                <div class="step-content hidden" id="step2">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-green-500 rounded-full">
+                                    <i class="fas fa-coffee text-white text-sm"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Paso 2: Información del Producto</h3>
+                                <p class="text-sm text-gray-500">Detalles del café y especificaciones de procesamiento</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.coffee_type }}
+                                <label class="block text-xs text-gray-500 mt-1">Tipo de Café <span class="text-red-500">*</span></label>
+                                {% if form.coffee_type.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.coffee_type.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                {{ form.price_per_kg }}
+                                <label class="block text-xs text-gray-500 mt-1">Precio por KG ($) <span class="text-red-500">*</span></label>
+                                {% if form.price_per_kg.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.price_per_kg.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Total Calculado</label>
+                                    <div class="text-3xl font-bold text-green-600" id="totalAmount">$0.00</div>
+                                    <input type="hidden" name="total_amount" id="totalAmountInput" value="0">
+                                    <div class="text-sm text-gray-500 mt-1">
+                                        Cantidad: <span id="calcQuantity">0</span> kg × Precio: $<span id="calcPrice">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            {{ form.packaging_type }}
+                            <label class="block text-xs text-gray-500 mt-1">Tipo de Empaque</label>
+                            {% if form.packaging_type.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.packaging_type.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-4">
+                            {{ form.packaging_details }}
+                            <label class="block text-xs text-gray-500 mt-1">Detalles del Empaque</label>
+                            {% if form.packaging_details.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.packaging_details.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 3: Información de Entrega -->
+                <div class="step-content hidden" id="step3">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-purple-500 rounded-full">
+                                    <i class="fas fa-truck text-white text-sm"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Paso 3: Información de Entrega</h3>
+                                <p class="text-sm text-gray-500">Detalles de entrega y fecha comprometida</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.delivery_method }}
+                                <label class="block text-xs text-gray-500 mt-1">Método de Entrega <span class="text-red-500">*</span></label>
+                                {% if form.delivery_method.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.delivery_method.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                {{ form.committed_date }}
+                                <label class="block text-xs text-gray-500 mt-1">Fecha Comprometida <span class="text-red-500">*</span></label>
+                                {% if form.committed_date.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.committed_date.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            {{ form.delivery_address }}
+                            <label class="block text-xs text-gray-500 mt-1">Dirección de Entrega</label>
+                            {% if form.delivery_address.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.delivery_address.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 4: Confirmación -->
+                <div class="step-content hidden" id="step4">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-green-500 rounded-full">
+                                    <i class="fas fa-check-circle text-white text-sm"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Paso 4: Confirmación</h3>
+                                <p class="text-sm text-gray-500">Revisa todos los datos antes de crear el pedido</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4">Resumen del Pedido</h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Cliente</h5>
+                                    <p class="text-sm text-gray-600" id="summaryClient">No seleccionado</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Producto</h5>
+                                    <p class="text-sm text-gray-600" id="summaryProduct">No especificado</p>
+                                    <p class="text-sm text-gray-600" id="summaryQuantity">0 kg</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Total</h5>
+                                    <p class="text-lg font-bold text-green-600" id="summaryTotal">$0.00</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Entrega</h5>
+                                    <p class="text-sm text-gray-600" id="summaryDelivery">No especificada</p>
+                                    <p class="text-sm text-gray-600" id="summaryDate">Fecha no definida</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div class="flex">
+                                    <i class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i>
+                                    <div>
+                                        <h5 class="text-sm font-medium text-yellow-800">Confirmación</h5>
+                                        <p class="text-sm text-yellow-700 mt-1">
+                                            Al crear este pedido, se enviará automáticamente una confirmación por email al cliente
+                                            y el pedido quedará registrado en el sistema para su procesamiento.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navegación entre pasos -->
+                <div class="px-6 py-4 bg-gray-50 border-t">
+                    <div class="flex items-center justify-between">
+                        <button type="button" id="prevBtn"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Anterior
+                        </button>
+
+                        <div class="flex space-x-3">
+                            <button type="button" id="nextBtn"
+                                    class="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Siguiente
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+
+                            <button type="submit" id="submitBtn"
+                                    class="hidden inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                <i class="fas fa-save mr-2"></i>
+                                Crear Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <i class="fas fa-check text-green-600"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mt-4">Pedido Creado Exitosamente</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">
+                    El pedido ha sido registrado correctamente y está listo para el siguiente proceso.
+                </p>
+            </div>
+            <div class="flex items-center px-4 py-3">
+                <button id="viewPedidoBtn"
+                        class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    Ver Pedido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos de navegación
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const currentStepInput = document.getElementById('currentStepInput');
+    const currentStepNumber = document.getElementById('currentStepNumber');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const stepLabels = document.querySelectorAll('.step-label');
+
+    // Elementos de formulario
+    const form = document.getElementById('pedidoForm');
+    const quantityInput = document.getElementById('id_quantity_kg');
+    const priceInput = document.getElementById('id_price_per_kg');
+    const clientSelect = document.getElementById('id_client');
+    const totalDisplay = document.getElementById('totalAmount');
+    const totalInput = document.getElementById('totalAmountInput');
+    const calcQuantity = document.getElementById('calcQuantity');
+    const calcPrice = document.getElementById('calcPrice');
+
+    // Elementos de resumen
+    const summaryClient = document.getElementById('summaryClient');
+    const summaryProduct = document.getElementById('summaryProduct');
+    const summaryQuantity = document.getElementById('summaryQuantity');
+    const summaryTotal = document.getElementById('summaryTotal');
+    const summaryDelivery = document.getElementById('summaryDelivery');
+    const summaryDate = document.getElementById('summaryDate');
+
+    let currentStep = 1;
+    const totalSteps = 4;
+
+    // Configuración de equipos (para referencia futura)
+    const equipmentConfig = {
+        'industrial_200kg': { capacity: 200, name: 'Industrial 200kg' },
+        'industrial_500kg': { capacity: 500, name: 'Industrial 500kg' },
+        'artisanal_50kg': { capacity: 50, name: 'Artesanal 50kg' },
+        'experimental_10kg': { capacity: 10, name: 'Experimental 10kg' }
+    };
+
+    // Navegación entre pasos
+    function showStep(step) {
+        // Ocultar todos los pasos
+        document.querySelectorAll('.step-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+
+        // Mostrar paso actual
+        document.getElementById(`step${step}`).classList.remove('hidden');
+
+        // Actualizar navegación
+        prevBtn.style.display = step === 1 ? 'none' : 'inline-flex';
+        nextBtn.style.display = step === totalSteps ? 'none' : 'inline-flex';
+        submitBtn.style.display = step === totalSteps ? 'inline-flex' : 'none';
+
+        // Actualizar barra de progreso
+        const progress = (step / totalSteps) * 100;
+        progressBar.style.width = `${progress}%`;
+        progressText.textContent = `${Math.round(progress)}%`;
+        currentStepNumber.textContent = step;
+        currentStepInput.value = step;
+
+        // Actualizar labels de pasos
+        stepLabels.forEach((label, index) => {
+            if (index + 1 <= step) {
+                label.classList.add('active');
+            } else {
+                label.classList.remove('active');
+            }
+        });
+
+        // Actualizar resumen en el paso 4
+        if (step === 4) {
+            updateSummary();
+        }
+    }
+
+    function nextStep() {
+        if (validateCurrentStep()) {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    }
+
+    // Validación de pasos
+    function validateCurrentStep() {
+        const errors = [];
+
+        switch (currentStep) {
+            case 1: // Recepción
+                if (!clientSelect || !clientSelect.value) {
+                    errors.push('Debe seleccionar un cliente');
+                }
+                if (!quantityInput || !quantityInput.value || parseFloat(quantityInput.value) <= 0) {
+                    errors.push('La cantidad debe ser mayor a 0');
+                }
+                break;
+
+            case 2: // Producto
+                if (!priceInput || !priceInput.value || parseFloat(priceInput.value) <= 0) {
+                    errors.push('El precio debe ser mayor a 0');
+                }
+                break;
+
+            case 3: // Entrega
+                const committedDate = document.getElementById('id_committed_date');
+                if (committedDate && committedDate.value) {
+                    const selectedDate = new Date(committedDate.value);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (selectedDate < today) {
+                        errors.push('La fecha comprometida no puede ser anterior a hoy');
+                    }
+                }
+                break;
+        }
+
+        if (errors.length > 0) {
+            alert('Errores en el formulario:\n' + errors.join('\n'));
+            return false;
+        }
+
+        return true;
+    }
+
+    // Cálculo automático del total
+    function calculateTotal() {
+        const quantity = parseFloat(quantityInput?.value) || 0;
+        const price = parseFloat(priceInput?.value) || 0;
+        const total = quantity * price;
+
+        if (totalDisplay) {
+            totalDisplay.textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2});
+        }
+        if (totalInput) {
+            totalInput.value = total.toFixed(2);
+        }
+        if (calcQuantity) {
+            calcQuantity.textContent = quantity.toFixed(2);
+        }
+        if (calcPrice) {
+            calcPrice.textContent = price.toFixed(2);
+        }
+    }
+
+    // Actualizar resumen
+    function updateSummary() {
+        // Cliente
+        if (clientSelect && clientSelect.selectedOptions[0]) {
+            summaryClient.textContent = clientSelect.selectedOptions[0].text;
+        }
+
+        // Producto
+        const coffeeType = document.getElementById('id_coffee_type');
+        if (coffeeType && coffeeType.selectedOptions[0]) {
+            summaryProduct.textContent = coffeeType.selectedOptions[0].text;
+        }
+
+        // Cantidad
+        if (quantityInput) {
+            summaryQuantity.textContent = `${quantityInput.value} kg`;
+        }
+
+        // Total
+        if (totalDisplay) {
+            summaryTotal.textContent = totalDisplay.textContent;
+        }
+
+        // Entrega
+        const deliveryMethod = document.getElementById('id_delivery_method');
+        if (deliveryMethod && deliveryMethod.selectedOptions[0]) {
+            summaryDelivery.textContent = deliveryMethod.selectedOptions[0].text;
+        }
+
+        // Fecha
+        const committedDate = document.getElementById('id_committed_date');
+        if (committedDate && committedDate.value) {
+            const date = new Date(committedDate.value);
+            summaryDate.textContent = date.toLocaleDateString('es-ES');
+        }
+    }
+
+    // Actualizar validaciones visuales
+    function updateValidations() {
+        const quantityValidation = document.getElementById('quantityValidation');
+        const clientValidation = document.getElementById('clientValidation');
+
+        // Validar cantidad
+        if (quantityInput && quantityInput.value && parseFloat(quantityInput.value) > 0) {
+            quantityValidation.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Cantidad válida';
+        } else {
+            quantityValidation.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i>Cantidad requerida';
+        }
+
+        // Validar cliente
+        if (clientSelect && clientSelect.value) {
+            clientValidation.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Cliente seleccionado';
+        } else {
+            clientValidation.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i>Cliente requerido';
+        }
+    }
+
+    // Event listeners
+    if (nextBtn) {
+        nextBtn.addEventListener('click', nextStep);
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', prevStep);
+    }
+
+    // Cálculos en tiempo real
+    if (quantityInput) {
+        quantityInput.addEventListener('input', function() {
+            calculateTotal();
+            updateValidations();
+        });
+    }
+
+    if (priceInput) {
+        priceInput.addEventListener('input', function() {
+            calculateTotal();
+        });
+    }
+
+    if (clientSelect) {
+        clientSelect.addEventListener('change', updateValidations);
+    }
+
+    // Validación final del formulario
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validateCurrentStep()) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+
+    // Inicialización
+    showStep(1);
+    calculateTotal();
+    updateValidations();
+});
+</script>
+
+<style>
+.step-label.active {
+    @apply text-blue-600 font-medium;
+}
+
+.step-label:not(.active) {
+    @apply text-gray-400;
+}
+</style>
+{% endblock %}

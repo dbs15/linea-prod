@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pedidos para Producción - {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header con breadcrumbs -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-4">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="flex items-center space-x-4">
+                        <li>
+                            <div>
+                                <a href="{% url 'core:dashboard' %}" class="text-gray-400 hover:text-gray-500">
+                                    <i class="fas fa-home"></i>
+                                    <span class="sr-only">Dashboard</span>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                <span class="ml-4 text-purple-600 font-medium">Producción</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Pedidos para Producción</h1>
+                    <p class="mt-2 text-gray-600">Gestiona el empaque y producción final de los pedidos</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                        <i class="fas fa-boxes mr-2"></i>
+                        Producción
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-list text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total Pendientes</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ total_pending }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Con Proceso</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ with_process }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-clock text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Sin Proceso</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ without_process }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-weight text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total KG</dt>
+                                <dd class="text-lg font-medium text-gray-900">
+                                    {% widthratio object_list|length 1 10 %}kg
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Pedidos -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Pedidos Disponibles</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Selecciona un pedido para iniciar el proceso de producción</p>
+            </div>
+
+            {% if object_list %}
+                <ul class="divide-y divide-gray-200">
+                    {% for order in object_list %}
+                    <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-box text-purple-600"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="flex items-center">
+                                        <h4 class="text-sm font-medium text-gray-900">
+                                            Pedido #{{ order.order_number }}
+                                        </h4>
+                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            {% if order.state == 'in_production' %}
+                                                bg-yellow-100 text-yellow-800
+                                            {% else %}
+                                                bg-gray-100 text-gray-800
+                                            {% endif %}">
+                                            {{ order.get_state_display }}
+                                        </span>
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        <span class="font-medium">{{ order.client.full_name }}</span>
+                                        • {{ order.final_quantity_kg|default:order.quantity_kg }}kg tostado
+                                        • {{ order.get_coffee_type_display }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                <!-- Indicador de proceso -->
+                                {% if order.production_process %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        Procesado
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Pendiente
+                                    </span>
+                                {% endif %}
+
+                                <!-- Acciones -->
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="showOrderDetail({{ order.id }})"
+                                            class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        Ver
+                                    </button>
+
+                                    {% if not order.production_process %}
+                                        <a href="{% url 'core:produccion_create' order.id %}"
+                                           class="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700">
+                                            <i class="fas fa-box mr-1"></i>
+                                            Iniciar Producción
+                                        </a>
+                                    {% else %}
+                                        <button onclick="showProcessDetail({{ order.production_process.id }})"
+                                                class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Ver Proceso
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-box text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No hay pedidos pendientes</h3>
+                    <p class="text-gray-500 mb-6">Todos los pedidos han sido procesados o no hay pedidos en estado de producción.</p>
+                    <a href="{% url 'core:pedido_list' %}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Ver Todos los Pedidos
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalle de Pedido -->
+<div id="orderDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Detalle del Pedido</h3>
+                <button onclick="closeModal('orderDetailModal')"
+                        class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="orderDetailContent">
+                <!-- Contenido se carga aquí vía AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showOrderDetail(orderId) {
+    const modal = document.getElementById('orderDetailModal');
+    const content = document.getElementById('orderDetailContent');
+
+    content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>';
+    modal.classList.remove('hidden');
+
+    fetch(`{% url 'core:pedido_detalle_ajax' orderId %}`)
+        .then(response => response.json())
+        .then(data => {
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-4">Información del Pedido</h4>
+                        <dl class="space-y-2">
+                            <div><dt class="text-sm text-gray-500">Número:</dt><dd class="text-sm font-medium">${data.order_number}</dd></div>
+                            <div><dt class="text-sm text-gray-500">Cliente:</dt><dd class="text-sm font-medium">${data.client.name}</dd></div>
+                            <div><dt class="text-sm text-gray-500">Cantidad:</dt><dd class="text-sm font-medium">${data.quantity_kg} kg</dd></div>
+                            <div><dt class="text-sm text-gray-500">Estado:</dt><dd class="text-sm font-medium">${data.state}</dd></div>
+                        </dl>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-4">Proceso de Tostión</h4>
+                        ${data.toasting_process ? `
+                            <dl class="space-y-2">
+                                <div><dt class="text-sm text-gray-500">Temperatura:</dt><dd class="text-sm font-medium">${data.toasting_process.temperature}°C</dd></div>
+                                <div><dt class="text-sm text-gray-500">Tiempo:</dt><dd class="text-sm font-medium">${data.toasting_process.time} min</dd></div>
+                                <div><dt class="text-sm text-gray-500">Rendimiento:</dt><dd class="text-sm font-medium">${data.toasting_process.yield_percentage}%</dd></div>
+                            </dl>
+                        ` : '<p class="text-sm text-gray-500">Sin proceso de tostión registrado</p>'}
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            content.innerHTML = '<div class="text-center py-8 text-red-600">Error al cargar los detalles</div>';
+        });
+}
+
+function showProcessDetail(processId) {
+    // Implementar detalle de proceso de producción
+    alert('Funcionalidad de detalle de proceso próximamente disponible');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+document.addEventListener('click', function(event) {
+    const modals = ['orderDetailModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (event.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+});
+</script>
+{% endblock %}

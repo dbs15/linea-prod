@@ -1,0 +1,33 @@
+PEDIDO ENTREGADO - {{ company.name }}
+
+Estimado {{ client.first_name }} {{ client.last_name }},
+
+Le confirmamos que su pedido ha sido entregado exitosamente:
+
+DETALLES DE LA ENTREGA:
+=======================
+Número de Pedido: {{ order.order_number }}
+{% if invoice %}
+Número de Factura: {{ invoice.invoice_number }}
+{% endif %}
+Fecha de Entrega: {{ order.delivered_at|date:"d/m/Y H:i" }}
+Persona que Entregó: {{ order.delivered_by.get_full_name }}
+{% if order.delivery_notes %}
+Notas de Entrega: {{ order.delivery_notes }}
+{% endif %}
+
+¡Gracias por confiar en {{ company.name }} para el procesamiento de su café!
+
+Esperamos poder servirle nuevamente en el futuro.
+
+Si tiene alguna observación sobre el servicio recibido, no dude en contactarnos:
+
+{{ company.name }}
+Teléfono: {{ company.phone }}
+Email: {{ company.email }}
+
+¡Hasta la próxima!
+
+---
+Este es un mensaje automático. Por favor no responda a este correo.
+{{ company.name }} - Sistema de Maquila de Café

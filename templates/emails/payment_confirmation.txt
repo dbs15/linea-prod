@@ -1,0 +1,30 @@
+PAGO CONFIRMADO - {{ company.name }}
+
+Estimado {{ client.first_name }} {{ client.last_name }},
+
+Hemos confirmado el pago de su factura. ¡Muchas gracias!
+
+DETALLES DEL PAGO:
+==================
+Número de Factura: {{ invoice.invoice_number }}
+Número de Pedido: {{ order.order_number }}
+Fecha de Pago: {{ invoice.payment_date|date:"d/m/Y" }}
+Monto Pagado: ${{ invoice.total_amount }}
+
+Ahora puede proceder a recoger su pedido en nuestras instalaciones durante el horario de atención.
+
+Horario de Atención: Lunes a Viernes de 8:00 AM a 5:00 PM
+
+Por favor traiga esta confirmación de pago al momento de recoger su pedido.
+
+INFORMACIÓN DE CONTACTO:
+========================
+{{ company.name }}
+Teléfono: {{ company.phone }}
+Email: {{ company.email }}
+
+¡Gracias por su pago puntual!
+
+---
+Este es un mensaje automático. Por favor no responda a este correo.
+{{ company.name }} - Sistema de Maquila de Café

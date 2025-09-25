@@ -1,0 +1,22 @@
+PEDIDO LISTO PARA FACTURAR - {{ company.name }}
+
+Equipo de Facturación,
+
+Hay un nuevo pedido que está listo para ser facturado:
+
+DETALLES DEL PEDIDO:
+===================
+Número de Pedido: {{ order.order_number }}
+Cliente: {{ order.client.first_name }} {{ order.client.last_name }}
+Cantidad: {{ order.quantity_kg }} kg
+Tipo de Café: {{ order.get_coffee_type_display }}
+Total: ${{ order.total_amount }}
+Fecha de Producción Completa: {{ order.production_completed_at|date:"d/m/Y H:i" }}
+
+Por favor proceda con la creación de la factura correspondiente.
+
+Atentamente,
+Sistema Automático de {{ company.name }}
+
+---
+Este es un mensaje automático del sistema de maquila.

@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block title %}Pedidos para Facturar - {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Pedidos para Facturar</h1>
+                    <p class="mt-2 text-gray-600">Genera facturas para pedidos completados</p>
+                </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i>
+                    Facturación
+                </span>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-list text-white text-sm"></i>
+                        </div>
+                        <div class="ml-5">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500">Total Pendientes</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ total_pending }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-file-invoice text-white text-sm"></i>
+                        </div>
+                        <div class="ml-5">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500">Con Factura</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ with_invoice }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock text-white text-sm"></i>
+                        </div>
+                        <div class="ml-5">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500">Facturas Vencidas</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ overdue_invoices|length }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Pedidos -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Pedidos Disponibles</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Selecciona un pedido para generar su factura</p>
+            </div>
+
+            {% if object_list %}
+                <ul class="divide-y divide-gray-200">
+                    {% for order in object_list %}
+                    <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-file-invoice text-green-600"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="flex items-center">
+                                        <h4 class="text-sm font-medium text-gray-900">
+                                            Pedido #{{ order.order_number }}
+                                        </h4>
+                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            {{ order.get_state_display }}
+                                        </span>
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        <span class="font-medium">{{ order.client.full_name }}</span>
+                                        • Total: ${{ order.total_amount }}
+                                        • Fecha: {{ order.created_at|date:"d/m/Y" }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                {% if order.invoice %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        Facturado
+                                    </span>
+                                    <button onclick="showInvoiceDetail({{ order.invoice.id }})"
+                                            class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        Ver Factura
+                                    </button>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Pendiente
+                                    </span>
+                                    <a href="{% url 'core:facturacion_create' order.id %}"
+                                       class="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                                        <i class="fas fa-file-invoice-dollar mr-1"></i>
+                                        Facturar
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-file-invoice-dollar text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No hay pedidos pendientes</h3>
+                    <p class="text-gray-500 mb-6">Todos los pedidos han sido facturados o no hay pedidos listos para facturar.</p>
+                    <a href="{% url 'core:pedido_list' %}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Ver Todos los Pedidos
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Facturas Vencidas -->
+        {% if overdue_invoices %}
+        <div class="mt-8">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Facturas Vencidas</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                                {% for invoice in overdue_invoices %}
+                                <li>Factura #{{ invoice.invoice_number }} - Vencida desde {{ invoice.due_date|date:"d/m/Y" }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

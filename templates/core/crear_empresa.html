@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Nueva Empresa - Sistema de Maquilas{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-coffee-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-coffee-500 to-coffee-700 rounded-full mb-6 shadow-lg">
+                <i class="fas fa-building text-3xl text-white"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                Crear Nueva Empresa
+            </h1>
+            <p class="text-gray-600">
+                Registra una nueva empresa maquiladora en el sistema
+            </p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="card-glass">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Nombre de la Empresa -->
+                <div>
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-building mr-2 text-coffee-600"></i>{{ form.name.label }}
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.name.errors.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- NIT -->
+                <div>
+                    <label for="{{ form.nit.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-id-card mr-2 text-coffee-600"></i>{{ form.nit.label }}
+                    </label>
+                    {{ form.nit }}
+                    {% if form.nit.errors %}
+                        <p class="mt-1 text-sm text-red-600 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.nit.errors.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Dirección -->
+                <div>
+                    <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-map-marker-alt mr-2 text-coffee-600"></i>{{ form.address.label }}
+                    </label>
+                    {{ form.address }}
+                    {% if form.address.errors %}
+                        <p class="mt-1 text-sm text-red-600 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.address.errors.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Teléfono -->
+                <div>
+                    <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-phone mr-2 text-coffee-600"></i>{{ form.phone.label }}
+                    </label>
+                    {{ form.phone }}
+                    {% if form.phone.errors %}
+                        <p class="mt-1 text-sm text-red-600 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.phone.errors.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-envelope mr-2 text-coffee-600"></i>{{ form.email.label }}
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <p class="mt-1 text-sm text-red-600 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.email.errors.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Plan de Suscripción -->
+                <div>
+                    <label for="{{ form.plan.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-crown mr-2 text-coffee-600"></i>{{ form.plan.label }}
+                    </label>
+                    {{ form.plan }}
+                    {% if form.plan.errors %}
+                        <p class="mt-1 text-sm text-red-600 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ form.plan.errors.0 }}
+                        </p>
+                    {% endif %}
+
+                    <!-- Plan Info -->
+                    <div class="mt-2 grid grid-cols-3 gap-2 text-xs">
+                        <div class="bg-blue-50 border border-blue-200 rounded p-2 text-center">
+                            <div class="font-medium text-blue-900">Básico</div>
+                            <div class="text-blue-700">Funciones esenciales</div>
+                        </div>
+                        <div class="bg-purple-50 border border-purple-200 rounded p-2 text-center">
+                            <div class="font-medium text-purple-900">Premium</div>
+                            <div class="text-purple-700">Reportes avanzados</div>
+                        </div>
+                        <div class="bg-gold-50 border border-yellow-200 rounded p-2 text-center">
+                            <div class="font-medium text-yellow-900">Enterprise</div>
+                            <div class="text-yellow-700">Funciones completas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Non-field errors -->
+                {% if form.non_field_errors %}
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                            <div>
+                                <h3 class="text-sm font-medium text-red-800">Errores en el formulario</h3>
+                                <div class="mt-1 text-sm text-red-700">
+                                    <ul class="list-disc pl-5 space-y-1">
+                                        {% for error in form.non_field_errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Submit Buttons -->
+                <div class="flex space-x-4 pt-4">
+                    <button type="submit" class="flex-1 btn-coffee text-lg py-3 px-4 transform hover:scale-105 transition-all duration-300">
+                        <i class="fas fa-plus-circle mr-2"></i>
+                        Crear Empresa
+                    </button>
+                    <a href="{% url 'core:dashboard' %}" class="btn-coffee-outline text-lg py-3 px-6">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Card -->
+        <div class="card-glass mt-6">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
+                    <i class="fas fa-info-circle text-blue-600"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Información Importante</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    Al crear una empresa, se generará automáticamente un esquema de base de datos independiente
+                    para garantizar el aislamiento completo de los datos. La empresa podrá comenzar a operar
+                    inmediatamente después de su creación.
+                </p>
+            </div>
+        </div>
+
+        <!-- Decorative elements -->
+        <div class="absolute top-20 left-10 w-20 h-20 bg-coffee-200 rounded-full opacity-20 animate-bounce-subtle"></div>
+        <div class="absolute bottom-20 right-10 w-16 h-16 bg-coffee-300 rounded-full opacity-30 animate-bounce-subtle" style="animation-delay: 1s;"></div>
+    </div>
+</div>
+
+<style>
+/* Custom styles for form */
+.card-glass {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Input focus effects */
+input:focus, textarea:focus, select:focus {
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+}
+
+/* Button hover effects */
+.btn-coffee:hover {
+    box-shadow: 0 10px 25px rgba(139, 69, 19, 0.3);
+}
+</style>
+
+<script>
+// Form validation and enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+
+    // Real-time validation for NIT (only numbers)
+    const nitField = document.querySelector('input[name="nit"]');
+    if (nitField) {
+        nitField.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+
+    // Real-time validation for phone (only numbers and basic formatting)
+    const phoneField = document.querySelector('input[name="phone"]');
+    if (phoneField) {
+        phoneField.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9+\-\s()]/g, '');
+        });
+    }
+
+    // Email validation feedback
+    const emailField = document.querySelector('input[name="email"]');
+    if (emailField) {
+        emailField.addEventListener('blur', function(e) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (this.value && !emailRegex.test(this.value)) {
+                this.classList.add('border-red-300');
+                if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('email-error')) {
+                    const error = document.createElement('p');
+                    error.className = 'mt-1 text-sm text-red-600 flex items-center email-error';
+                    error.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i>Ingresa un email válido';
+                    this.parentNode.insertBefore(error, this.nextSibling);
+                }
+            } else {
+                this.classList.remove('border-red-300');
+                const error = this.parentNode.querySelector('.email-error');
+                if (error) error.remove();
+            }
+        });
+    }
+
+    // Form submission with loading state
+    form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creando empresa...';
+            submitBtn.disabled = true;
+        }
+    });
+});
+</script>
+{% endblock %}

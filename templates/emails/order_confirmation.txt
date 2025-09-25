@@ -1,0 +1,40 @@
+CONFIRMACIÓN DE PEDIDO - {{ company.name }}
+
+Estimado {{ client.first_name }} {{ client.last_name }},
+
+Le confirmamos que hemos recibido su pedido exitosamente.
+
+DETALLES DEL PEDIDO:
+===================
+Número de Pedido: {{ order.order_number }}
+Fecha de Creación: {{ order.created_at|date:"d/m/Y H:i" }}
+Cantidad: {{ order.quantity_kg }} kg
+Tipo de Café: {{ order.get_coffee_type_display }}
+Precio por KG: ${{ order.price_per_kg }}
+Total: ${{ order.total_amount }}
+Fecha Comprometida: {{ order.committed_date|date:"d/m/Y" }}
+Forma de Entrega: {{ order.get_delivery_method_display }}
+{% if order.delivery_address %}
+Dirección de Entrega: {{ order.delivery_address }}
+{% endif %}
+
+PRÓXIMOS PASOS:
+===============
+1. Procesamiento del café (Tostión)
+2. Empaque según especificaciones
+3. Preparación para entrega
+4. Entrega final
+
+Le mantendremos informado del progreso de su pedido a través de este correo electrónico.
+
+INFORMACIÓN DE CONTACTO:
+========================
+{{ company.name }}
+Teléfono: {{ company.phone }}
+Email: {{ company.email }}
+
+¡Gracias por confiar en nosotros!
+
+---
+Este es un mensaje automático. Por favor no responda a este correo.
+{{ company.name }} - Sistema de Maquila de Café

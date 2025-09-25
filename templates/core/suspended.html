@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Empresa Suspendida - Sistema de Maquilas{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-lg w-full">
+        <!-- Main Card -->
+        <div class="card-glass text-center mb-8">
+            <!-- Warning Icon -->
+            <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-red-500 to-red-600 rounded-full mb-8 shadow-lg animate-bounce-subtle">
+                <i class="fas fa-exclamation-triangle text-4xl text-white"></i>
+            </div>
+
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                Empresa Suspendida
+            </h1>
+
+            <p class="text-gray-600 mb-8 leading-relaxed">
+                Tu empresa ha sido suspendida temporalmente.
+                No puedes acceder al sistema hasta que se resuelva la situación.
+            </p>
+
+            {% if company %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8 text-left">
+                <h3 class="font-semibold text-red-900 mb-4 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>Detalles de la suspensión
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">Empresa:</span>
+                        <span class="text-sm text-gray-900">{{ company.name }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">Estado:</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium status-suspended">
+                            {{ company.get_status_display }}
+                        </span>
+                    </div>
+                    {% if company.suspended_at %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">Fecha:</span>
+                        <span class="text-sm text-gray-900">{{ company.suspended_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                    {% if suspension_reason %}
+                    <div class="flex flex-col">
+                        <span class="text-sm font-medium text-gray-700 mb-1">Motivo:</span>
+                        <span class="text-sm text-gray-900 bg-white p-2 rounded border">{{ suspension_reason }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="space-y-4">
+                <p class="text-sm text-gray-500">
+                    Para más información, contacta al administrador del sistema.
+                </p>
+
+                <div class="pt-4">
+                    <a href="{% url 'core:logout' %}" class="btn-coffee w-full text-lg py-3 px-4 transform hover:scale-105 transition-all duration-300">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card-glass">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full mb-6 shadow-lg">
+                    <i class="fas fa-life-ring text-2xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">¿Necesitas ayuda?</h3>
+                <p class="text-gray-600 mb-6">
+                    Nuestro equipo de soporte está disponible para ayudarte a resolver esta situación.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-envelope text-coffee-600 text-lg mb-2"></i>
+                        <div class="font-medium text-gray-900">Email</div>
+                        <div class="text-gray-600">soporte@maquilacafe.com</div>
+                    </div>
+
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-phone text-coffee-600 text-lg mb-2"></i>
+                        <div class="font-medium text-gray-900">Teléfono</div>
+                        <div class="text-gray-600">+57 300 123 4567</div>
+                    </div>
+
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-clock text-coffee-600 text-lg mb-2"></i>
+                        <div class="font-medium text-gray-900">Horario</div>
+                        <div class="text-gray-600">L-V 8AM-6PM</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decorative elements -->
+        <div class="absolute top-20 left-10 w-20 h-20 bg-red-200 rounded-full opacity-20 animate-bounce-subtle"></div>
+        <div class="absolute bottom-20 right-10 w-16 h-16 bg-red-300 rounded-full opacity-30 animate-bounce-subtle" style="animation-delay: 1s;"></div>
+    </div>
+</div>
+
+<style>
+/* Custom styles for suspended page */
+.card-glass {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Status badge styles */
+.status-suspended {
+    background-color: #fef3c7;
+    color: #d97706;
+    border: 1px solid #f59e0b;
+}
+
+/* Button hover effects */
+.btn-coffee:hover {
+    box-shadow: 0 10px 25px rgba(139, 69, 19, 0.3);
+}
+</style>
+{% endblock %}

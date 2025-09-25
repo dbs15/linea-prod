@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Crear Factura - Pedido #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8 bg-white shadow rounded-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Crear Factura</h1>
+                    <p class="mt-1 text-gray-600">Pedido #{{ order.order_number }} - {{ order.client.full_name }}</p>
+                </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i>
+                    Facturación
+                </span>
+            </div>
+
+            <!-- Información del pedido -->
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-weight text-white text-sm"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Cantidad Procesada</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ order.final_quantity_kg|default:order.quantity_kg }} kg</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-dollar-sign text-white text-sm"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Total del Pedido</p>
+                            <p class="text-lg font-semibold text-gray-900">${{ order.total_amount }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar text-white text-sm"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Fecha de Entrega</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ order.committed_date|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" id="facturaForm">
+                {% csrf_token %}
+
+                <div class="px-6 py-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-6">Información de la Factura</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>{{ form.subtotal }}</div>
+                        <div>{{ form.tax_rate }}</div>
+                        <div>{{ form.issue_date }}</div>
+                        <div>{{ form.due_date }}</div>
+                    </div>
+
+                    <div class="mt-6 bg-gray-50 p-4 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Total con IVA</label>
+                        <div class="text-3xl font-bold text-green-600" id="totalWithTax">$0.00</div>
+                        <input type="hidden" name="total_amount" id="totalAmountInput">
+                    </div>
+                </div>
+
+                <div class="px-6 py-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-6">Información de Entrega</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>{{ form.delivery_person }}</div>
+                        <div>{{ form.recipient_person }}</div>
+                    </div>
+                    <div class="mt-4">{{ form.delivery_notes }}</div>
+                    <div class="mt-4">{{ form.notes }}</div>
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 flex justify-between">
+                    <a href="{% url 'core:facturacion_list' %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary bg-green-600 hover:bg-green-700">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i>
+                        Generar Factura
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subtotalInput = document.getElementById('{{ form.subtotal.id_for_label }}');
+    const taxRateInput = document.getElementById('{{ form.tax_rate.id_for_label }}');
+    const totalDisplay = document.getElementById('totalWithTax');
+    const totalInput = document.getElementById('totalAmountInput');
+
+    // Calcular total con IVA
+    function calculateTotal() {
+        const subtotal = parseFloat(subtotalInput.value) || 0;
+        const taxRate = parseFloat(taxRateInput.value) || 0;
+        const taxAmount = subtotal * (taxRate / 100);
+        const total = subtotal + taxAmount;
+
+        totalDisplay.textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2});
+        totalInput.value = total.toFixed(2);
+    }
+
+    subtotalInput.addEventListener('input', calculateTotal);
+    taxRateInput.addEventListener('input', calculateTotal);
+
+    // Calcular total inicial
+    calculateTotal();
+});
+</script>
+{% endblock %}
