@@ -15,7 +15,7 @@ from django.db.models import Q, Sum, Count
 from django.db.models.functions import TruncMonth
 from .models import Order, Client, Invoice, Company, ActivityLog, ToastingProcess, ProductionProcess
 from .forms import (
-    LoginForm, CompanyForm, UserForm, ClienteForm, PedidoForm,
+    LoginForm, CompanyForm, UserForm, ClienteForm, MaquilaForm,
     ProcesoTostionForm, ProcesoProduccionForm, FacturaForm
 )
 from .decorators import rol_requerido, super_admin_requerido
@@ -35,8 +35,8 @@ class HomeView(TemplateView):
             context.update({
                 'user_role': user.get_role_display(),
                 'company_name': user.company.name if user.company else 'Sin empresa',
-                'total_orders': Order.objects.filter(company=user.company).count() if user.company else 0,
-                'active_orders': Order.objects.filter(
+                'total_maquilas': Order.objects.filter(company=user.company).count() if user.company else 0,
+                'active_maquilas': Order.objects.filter(
                     company=user.company,
                     state__in=['registered', 'in_toasting', 'toasting_complete', 'in_production']
                 ).count() if user.company else 0,
@@ -244,10 +244,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         if user.role in ['aux_registro', 'admin_company', 'super_admin']:
             base_modules.append({
-                'name': 'Pedidos',
+                'name': 'Maquilas',
                 'icon': 'fas fa-shopping-cart',
-                'description': 'Gestionar pedidos existentes',
-                'url': 'core:pedido_list',
+                'description': 'Gestionar maquilas existentes',
+                'url': 'core:maquila_list',
                 'color': 'blue',
                 'permissions': ['view_order', 'add_order', 'view_client', 'add_client']
             })
@@ -297,12 +297,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def _get_company_metrics(self, company):
         """Métricas específicas de la empresa"""
         return {
-            'total_orders': Order.objects.filter(company=company).count(),
-            'active_orders': Order.objects.filter(
+            'total_maquilas': Order.objects.filter(company=company).count(),
+            'active_maquilas': Order.objects.filter(
                 company=company,
                 state__in=['registered', 'in_toasting', 'toasting_complete', 'in_production']
             ).count(),
-            'completed_orders': Order.objects.filter(
+            'completed_maquilas': Order.objects.filter(
                 company=company,
                 state__in=['billed', 'delivered']
             ).count(),
@@ -427,42 +427,50 @@ def client_detail(request, pk):
 
 
 @login_required
-def order_list(request):
-    """Lista de pedidos"""
-    orders = Order.objects.filter(company=request.user.company)
-    return render(request, 'core/order_list.html', {'orders': orders})
+def maquila_list_legacy(request):
+    """Lista de maquilas"""
+    maquilas = Order.objects.filter(company=request.user.company)
+    return render(request, 'core/maquilas/maquila_list.html', {'maquilas': maquilas})
 
 
 @login_required
-def order_create(request):
-    """Crear pedido"""
+def maquila_create_legacy(request):
+    """
+    Crear maquila
+    """
     if request.method == 'POST':
-        # Lógica para crear pedido
+        # Lógica para crear maquila
         pass
     clients = Client.objects.filter(company=request.user.company)
-    return render(request, 'core/order_form.html', {'clients': clients})
+    return render(request, 'core/maquilas/maquila_create.html', {'clients': clients})
 
 
 @login_required
-def order_detail(request, pk):
-    """Detalle de pedido"""
-    order = Order.objects.get(pk=pk, company=request.user.company)
-    return render(request, 'core/order_detail.html', {'order': order})
+def maquila_detail_legacy(request, pk):
+    """
+    Detalle de maquila
+    """
+    maquila = Order.objects.get(pk=pk, company=request.user.company)
+    return render(request, 'core/maquilas/maquila_create.html', {'maquila': maquila})
 
 
 @login_required
-def order_update(request, pk):
-    """Actualizar pedido"""
-    order = Order.objects.get(pk=pk, company=request.user.company)
+def maquila_update_legacy(request, pk):
+    """
+    Actualizar maquila
+    """
+    maquila = Order.objects.get(pk=pk, company=request.user.company)
     if request.method == 'POST':
-        # Lógica para actualizar pedido según estado
+        # Lógica para actualizar maquila según estado
         pass
-    return render(request, 'core/order_form.html', {'order': order})
+    return render(request, 'core/maquilas/maquila_create.html', {'maquila': maquila})
 
 
 @login_required
 def reports(request):
-    """Reportes"""
+    """
+    Reportes
+    """
     user = request.user
     company = user.company
 
@@ -476,39 +484,39 @@ def reports(request):
     date_to = request.GET.get('date_to')
     report_type = request.GET.get('report_type', 'general')
 
-    # Base queryset para pedidos
-    orders_queryset = Order.objects.filter(company=company)
+    # Base queryset para maquilas
+    maquilas_queryset = Order.objects.filter(company=company)
 
     # Aplicar filtros de fecha si existen
     if date_from:
-        orders_queryset = orders_queryset.filter(created_at__date__gte=date_from)
+        maquilas_queryset = maquilas_queryset.filter(created_at__date__gte=date_from)
     if date_to:
-        orders_queryset = orders_queryset.filter(created_at__date__lte=date_to)
+        maquilas_queryset = maquilas_queryset.filter(created_at__date__lte=date_to)
 
     # Métricas principales
-    total_orders = orders_queryset.count()
-    total_revenue = orders_queryset.aggregate(
+    total_maquilas = maquilas_queryset.count()
+    total_revenue = maquilas_queryset.aggregate(
         total=Sum('total_amount')
     )['total'] or 0
 
     total_clients = Client.objects.filter(company=company).count()
 
     # Calcular tiempo promedio de procesamiento (simplificado)
-    completed_orders = orders_queryset.filter(state__in=['billed', 'delivered'])
+    completed_maquilas = maquilas_queryset.filter(state__in=['billed', 'delivered'])
     avg_processing_time = 0
-    if completed_orders.exists():
+    if completed_maquilas.exists():
         total_days = sum(
-            (order.updated_at.date() - order.created_at.date()).days
-            for order in completed_orders
+            (maquila.updated_at.date() - maquila.created_at.date()).days
+            for maquila in completed_maquilas
         )
-        avg_processing_time = round(total_days / completed_orders.count(), 1)
+        avg_processing_time = round(total_days / completed_maquilas.count(), 1)
 
-    # Pedidos recientes
-    recent_orders = orders_queryset.order_by('-created_at')[:10]
+    # Maquilas recientes
+    recent_maquilas = maquilas_queryset.order_by('-created_at')[:10]
 
     # Top clientes (simplificado)
     top_clients = []
-    clients_with_orders = Client.objects.filter(
+    clients_with_maquilas = Client.objects.filter(
         company=company,
         orders__isnull=False
     ).annotate(
@@ -516,7 +524,7 @@ def reports(request):
         total_amount=Sum('orders__total_amount')
     ).order_by('-total_amount')[:5]
 
-    for client in clients_with_orders:
+    for client in clients_with_maquilas:
         top_clients.append({
             'name': client.full_name,
             'orders_count': client.orders_count,
@@ -525,7 +533,7 @@ def reports(request):
 
     # Top productos (por tipo de café)
     top_products = []
-    coffee_types = orders_queryset.values('coffee_type').annotate(
+    coffee_types = maquilas_queryset.values('coffee_type').annotate(
         quantity=Sum('quantity_kg'),
         revenue=Sum('total_amount'),
         orders_count=Count('id')
@@ -545,29 +553,29 @@ def reports(request):
     import datetime
 
     six_months_ago = timezone.now() - datetime.timedelta(days=180)
-    monthly_data = orders_queryset.filter(
+    monthly_data = maquilas_queryset.filter(
         created_at__gte=six_months_ago
     ).annotate(
         month=TruncMonth('created_at')
     ).values('month').annotate(
-        orders=Count('id'),
+        maquilas=Count('id'),
         revenue=Sum('total_amount')
     ).order_by('month')
 
     for data in monthly_data:
         monthly_performance.append({
             'month': data['month'].strftime('%B %Y'),
-            'orders': data['orders'],
+            'maquilas': data['maquilas'],
             'revenue': str(data['revenue'] or 0)
         })
 
     context = {
         'company': company,
-        'total_orders': total_orders,
+        'total_maquilas': total_maquilas,
         'total_revenue': f"{total_revenue:.2f}",
         'total_clients': total_clients,
         'avg_processing_time': avg_processing_time,
-        'recent_orders': recent_orders,
+        'recent_maquilas': recent_maquilas,
         'top_clients': top_clients,
         'top_products': top_products,
         'monthly_performance': monthly_performance,
@@ -581,14 +589,14 @@ def reports(request):
 
 # ==================== MÓDULO DE REGISTRO ====================
 
-class PedidoListView(LoginRequiredMixin, ListView):
+class MaquilaListView(LoginRequiredMixin, ListView):
     """
-    Lista de pedidos con filtros avanzados y paginación.
+    Lista de maquilas con filtros avanzados y paginación.
     Acceso: aux_registro, admin_company, super_admin
     """
     model = Order
-    template_name = 'core/pedidos/lista.html'
-    context_object_name = 'orders'
+    template_name = 'core/maquilas/maquila_list.html'
+    context_object_name = 'maquilas'
     paginate_by = 20
 
     def get_queryset(self):
@@ -629,11 +637,11 @@ class PedidoListView(LoginRequiredMixin, ListView):
 
         # Estadísticas rápidas
         queryset = self.get_queryset()
-        context['total_orders'] = queryset.count()
-        context['pending_orders'] = queryset.filter(
+        context['total_maquilas'] = queryset.count()
+        context['pending_maquilas'] = queryset.filter(
             state__in=['registered', 'in_toasting', 'toasting_complete', 'in_production']
         ).count()
-        context['completed_orders'] = queryset.filter(
+        context['completed_maquilas'] = queryset.filter(
             state__in=['billed', 'delivered']
         ).count()
 
@@ -644,15 +652,15 @@ class PedidoListView(LoginRequiredMixin, ListView):
         return super().dispatch(*args, **kwargs)
 
 
-class PedidoCreateView(LoginRequiredMixin, CreateView):
+class MaquilaCreateView(LoginRequiredMixin, CreateView):
     """
-    Crear pedido con opción de cliente existente o nuevo.
+    Crear maquila con opción de cliente existente o nuevo.
     Usa transacción atómica para garantizar integridad.
     """
     model = Order
-    form_class = PedidoForm
-    template_name = 'core/pedidos/crear.html'
-    success_url = reverse_lazy('core:pedido_list')
+    form_class = MaquilaForm
+    template_name = 'core/maquilas/maquila_create.html'
+    success_url = reverse_lazy('core:maquila_list')
 
     def dispatch(self, request, *args, **kwargs):
         # Verificar que el usuario tenga una empresa asignada
@@ -668,7 +676,7 @@ class PedidoCreateView(LoginRequiredMixin, CreateView):
         if not available_clients.exists():
             messages.warning(
                 request,
-                'No hay clientes registrados para tu empresa. Debes crear al menos un cliente antes de crear pedidos.'
+                'No hay clientes registrados para tu empresa. Debes crear al menos un cliente antes de crear maquilas.'
             )
             return redirect('core:cliente_list')
 
@@ -682,27 +690,74 @@ class PedidoCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         with transaction.atomic():
             # El formulario ya maneja la creación del cliente si es necesario
-            order = form.save()
+            maquila = form.save()
 
             # Registrar actividad
             ActivityLog.objects.create(
                 user=self.request.user,
                 company=self.request.user.company,
-                action='order_create',
-                description=f'Pedido {order.order_number} creado para {order.client.full_name}',
+                action='maquila_create',
+                description=f'Maquila {maquila.order_number} creada para {maquila.client.full_name}',
                 ip_address=self.request.META.get('REMOTE_ADDR'),
-                related_order=order
+                related_order=maquila
             )
 
             messages.success(
                 self.request,
-                f'Pedido {order.order_number} creado exitosamente para {order.client.full_name}.'
+                f'Maquila {maquila.order_number} creada exitosamente para {maquila.client.full_name}.'
             )
 
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        messages.error(self.request, 'Error al crear el pedido. Verifica los datos.')
+        messages.error(self.request, 'Error al crear la maquila. Verifica los datos.')
+        return super().form_invalid(form)
+
+    @method_decorator(rol_requerido('aux_registro', 'admin_company', 'super_admin'))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+
+class MaquilaUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Actualizar una maquila existente.
+    Acceso: aux_registro, admin_company, super_admin
+    """
+    model = Order
+    form_class = MaquilaForm
+    template_name = 'core/maquilas/maquila_update.html' # Se creará este template
+    success_url = reverse_lazy('core:maquila_list')
+    context_object_name = 'maquila'
+
+    def get_queryset(self):
+        """Solo permitir editar maquilas de la empresa del usuario"""
+        return Order.objects.filter(company=self.request.user.company)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        maquila = form.save()
+
+        ActivityLog.objects.create(
+            user=self.request.user,
+            company=self.request.user.company,
+            action='maquila_update',
+            description=f'Maquila {maquila.order_number} actualizada para {maquila.client.full_name}',
+            ip_address=self.request.META.get('REMOTE_ADDR'),
+            related_order=maquila
+        )
+
+        messages.success(
+            self.request,
+            f'Maquila {maquila.order_number} actualizada exitosamente para {maquila.client.full_name}.'
+        )
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Error al actualizar la maquila. Verifica los datos.')
         return super().form_invalid(form)
 
     @method_decorator(rol_requerido('aux_registro', 'admin_company', 'super_admin'))
@@ -714,13 +769,13 @@ class PedidoCreateView(LoginRequiredMixin, CreateView):
 
 class TostionListView(LoginRequiredMixin, ListView):
     """
-    Lista de pedidos disponibles para tostión.
-    Muestra pedidos registrados (para iniciar tostión) y en tostión (para procesar).
+    Lista de maquilas disponibles para tostión.
+    Muestra maquilas registradas (para iniciar tostión) y en tostión (para procesar).
     Acceso: aux_tostion, admin_company, super_admin
     """
     model = Order
     template_name = 'core/tostion/lista.html'
-    context_object_name = 'orders'
+    context_object_name = 'maquilas'
     paginate_by = 15
 
     def get_queryset(self):
@@ -733,19 +788,19 @@ class TostionListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         # Estadísticas de tostión
-        orders = self.get_queryset()
-        in_toasting_orders = orders.filter(state='in_toasting')
-        registered_orders = orders.filter(state='registered')
+        maquilas = self.get_queryset()
+        in_toasting_maquilas = maquilas.filter(state='in_toasting')
+        registered_maquilas = maquilas.filter(state='registered')
 
-        context['total_pending'] = orders.count()
-        context['in_toasting_count'] = in_toasting_orders.count()
-        context['registered_count'] = registered_orders.count()
-        context['with_process'] = in_toasting_orders.filter(toasting_process__isnull=False).count()
-        context['without_process'] = in_toasting_orders.filter(toasting_process__isnull=True).count()
+        context['total_pending'] = maquilas.count()
+        context['in_toasting_count'] = in_toasting_maquilas.count()
+        context['registered_count'] = registered_maquilas.count()
+        context['with_process'] = in_toasting_maquilas.filter(toasting_process__isnull=False).count()
+        context['without_process'] = in_toasting_maquilas.filter(toasting_process__isnull=True).count()
 
         # Separar listas para mostrar en secciones diferentes
-        context['registered_orders'] = registered_orders
-        context['toasting_orders'] = in_toasting_orders
+        context['registered_maquilas'] = registered_maquilas
+        context['toasting_maquilas'] = in_toasting_maquilas
 
         return context
 
@@ -756,7 +811,7 @@ class TostionListView(LoginRequiredMixin, ListView):
 
 class StartToastingView(LoginRequiredMixin, View):
     """
-    Vista para iniciar el proceso de tostión cambiando el estado del pedido.
+    Vista para iniciar el proceso de tostión cambiando el estado de la maquila.
     Acceso: aux_tostion, admin_company, super_admin
     """
 
@@ -766,100 +821,100 @@ class StartToastingView(LoginRequiredMixin, View):
 
     def post(self, request, order_id):
         try:
-            order = Order.objects.get(
+            maquila = Order.objects.get(
                 id=order_id,
                 company=request.user.company,
                 state='registered'
             )
 
-            # Cambiar estado del pedido a 'in_toasting'
-            order.start_toasting()
-            order.toasted_by = request.user
-            order.save()
+            # Cambiar estado de la maquila a 'in_toasting'
+            maquila.start_toasting()
+            maquila.toasted_by = request.user
+            maquila.save()
 
             # Registrar actividad
             ActivityLog.objects.create(
                 user=request.user,
                 company=request.user.company,
                 action='toasting_start',
-                description=f'Inicio de tostión para pedido {order.order_number}',
+                description=f'Inicio de tostión para maquila {maquila.order_number}',
                 ip_address=request.META.get('REMOTE_ADDR'),
-                related_order=order
+                related_order=maquila
             )
 
             messages.success(
                 request,
-                f'Proceso de tostión iniciado para pedido {order.order_number}.'
+                f'Proceso de tostión iniciado para maquila {maquila.order_number}.'
             )
 
             # Redirigir al proceso paso a paso
-            return redirect('core:tostion_create', order_id=order.id)
+            return redirect('core:tostion_create', order_id=maquila.id)
 
         except Order.DoesNotExist:
-            messages.error(request, 'Pedido no encontrado o no disponible para iniciar tostión.')
+            messages.error(request, 'Maquila no encontrada o no disponible para iniciar tostión.')
             return redirect('core:tostion_list')
 
 
 class TostionCreateView(LoginRequiredMixin, CreateView):
     """
-    Proceso de tostión paso a paso para un pedido.
+    Proceso de tostión paso a paso para una maquila.
     """
     model = ToastingProcess
     form_class = ProcesoTostionForm
     template_name = 'core/tostion/crear.html'
 
     def get(self, request, *args, **kwargs):
-        # Verificar que el pedido existe y está en estado correcto
+        # Verificar que la maquila existe y está en estado correcto
         order_id = self.kwargs.get('order_id')
         try:
-            order = Order.objects.get(
+            maquila = Order.objects.get(
                 id=order_id,
                 company=request.user.company,
                 state='in_toasting'
             )
         except Order.DoesNotExist:
-            messages.error(request, 'Pedido no encontrado o no disponible para tostión.')
+            messages.error(request, 'Maquila no encontrada o no disponible para tostión.')
             return redirect('core:tostion_list')
 
-        self.order = order
-
+        self.order = maquila
+        self.object = maquila # Asegurar que self.object también se establezca
+        
         # Obtener o crear proceso de tostión
         toasting_process, created = ToastingProcess.objects.get_or_create(
-            order=order,
+            order=maquila,
             defaults={
                 'processed_by': request.user,
-                'received_quantity_kg': order.quantity_kg
+                'received_quantity_kg': maquila.quantity_kg
             }
         )
-
         self.toasting_process = toasting_process
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        # Verificar que el pedido existe y está en estado correcto
+        # Verificar que la maquila existe y está en estado correcto
         order_id = self.kwargs.get('order_id')
         try:
-            order = Order.objects.get(
+            maquila = Order.objects.get(
                 id=order_id,
                 company=request.user.company,
                 state='in_toasting'
             )
         except Order.DoesNotExist:
-            messages.error(request, 'Pedido no encontrado o no disponible para tostión.')
+            messages.error(request, 'Maquila no encontrada o no disponible para tostión.')
             return redirect('core:tostion_list')
 
-        self.order = order
-
+        self.order = maquila
+        self.object = maquila # Asegurar que self.object también se establezca
+        
         # Obtener proceso de tostión
         toasting_process, created = ToastingProcess.objects.get_or_create(
-            order=order,
+            order=maquila,
             defaults={
                 'processed_by': request.user,
-                'received_quantity_kg': order.quantity_kg
+                'received_quantity_kg': maquila.quantity_kg
             }
         )
         self.toasting_process = toasting_process
-
         return super().post(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -871,8 +926,10 @@ class TostionCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['order'] = self.order
+        context['maquila'] = self.order
         context['toasting_process'] = self.toasting_process
+        context['object'] = self.order # Añadir como 'object' también, por si acaso
+        context['order'] = self.order # Añadir como 'order' también, por si acaso
 
         # Determinar paso actual y progreso
         # Primero intentar desde GET (para navegación por URL), luego desde POST (para navegación por formulario)
@@ -942,7 +999,7 @@ class TostionCreateView(LoginRequiredMixin, CreateView):
                     notes=form.cleaned_data.get('final_quality_notes', '')
                 )
 
-                # Cambiar estado del pedido
+                # Cambiar estado de la maquila
                 self.order.complete_toasting()
                 self.order.toasted_by = self.request.user
                 self.order.save()
@@ -952,14 +1009,14 @@ class TostionCreateView(LoginRequiredMixin, CreateView):
                     user=self.request.user,
                     company=self.request.user.company,
                     action='toasting_complete',
-                    description=f'Proceso de tostión completado para pedido {self.order.order_number}',
+                    description=f'Proceso de tostión completado para maquila {self.order.order_number}',
                     ip_address=self.request.META.get('REMOTE_ADDR'),
                     related_order=self.order
                 )
 
                 messages.success(
                     self.request,
-                    f'Proceso de tostión completado para pedido {self.order.order_number}.'
+                    f'Proceso de tostión completado para maquila {self.order.order_number}.'
                 )
 
                 return redirect('core:tostion_list')
@@ -982,12 +1039,12 @@ class TostionCreateView(LoginRequiredMixin, CreateView):
 
 class ProduccionListView(LoginRequiredMixin, ListView):
     """
-    Lista de pedidos listos para producción.
+    Lista de maquilas listos para producción.
     Acceso: aux_produccion, admin_company, super_admin
     """
     model = Order
     template_name = 'core/produccion/lista.html'
-    context_object_name = 'orders'
+    context_object_name = 'maquilas'
     paginate_by = 15
 
     def get_queryset(self):
@@ -1000,10 +1057,10 @@ class ProduccionListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         # Estadísticas de producción
-        orders = self.get_queryset()
-        context['total_pending'] = orders.count()
-        context['with_process'] = orders.filter(production_process__isnull=False).count()
-        context['without_process'] = orders.filter(production_process__isnull=True).count()
+        maquilas = self.get_queryset()
+        context['total_pending'] = maquilas.count()
+        context['with_process'] = maquilas.filter(production_process__isnull=False).count()
+        context['without_process'] = maquilas.filter(production_process__isnull=True).count()
 
         return context
 
@@ -1014,55 +1071,55 @@ class ProduccionListView(LoginRequiredMixin, ListView):
 
 class ProduccionCreateView(LoginRequiredMixin, CreateView):
     """
-    Crear proceso de producción para un pedido.
+    Crear proceso de producción para una maquila.
     """
     model = ProductionProcess
     form_class = ProcesoProduccionForm
     template_name = 'core/produccion/crear.html'
 
     def get(self, request, *args, **kwargs):
-        # Verificar que el pedido existe y está en estado correcto
+        # Verificar que la maquila existe y está en estado correcto
         order_id = self.kwargs.get('order_id')
         try:
-            order = Order.objects.get(
+            maquila = Order.objects.get(
                 id=order_id,
                 company=request.user.company,
                 state='in_production'
             )
             # Verificar que no tenga proceso de producción ya creado
-            if hasattr(order, 'production_process'):
-                messages.error(request, 'Este pedido ya tiene un proceso de producción iniciado.')
+            if hasattr(maquila, 'production_process'):
+                messages.error(request, 'Esta maquila ya tiene un proceso de producción iniciado.')
                 return redirect('core:produccion_list')
         except Order.DoesNotExist:
-            messages.error(request, 'Pedido no encontrado o no disponible para producción.')
+            messages.error(request, 'Maquila no encontrada o no disponible para producción.')
             return redirect('core:produccion_list')
 
-        self.order = order
+        self.order = maquila
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        # Verificar que el pedido existe y está en estado correcto
+        # Verificar que la maquila existe y está en estado correcto
         order_id = self.kwargs.get('order_id')
         try:
-            order = Order.objects.get(
+            maquila = Order.objects.get(
                 id=order_id,
                 company=request.user.company,
                 state='in_production'
             )
             # Verificar que no tenga proceso de producción ya creado
-            if hasattr(order, 'production_process'):
-                messages.error(request, 'Este pedido ya tiene un proceso de producción iniciado.')
+            if hasattr(maquila, 'production_process'):
+                messages.error(request, 'Esta maquila ya tiene un proceso de producción iniciado.')
                 return redirect('core:produccion_list')
         except Order.DoesNotExist:
-            messages.error(request, 'Pedido no encontrado o no disponible para producción.')
+            messages.error(request, 'Maquila no encontrada o no disponible para producción.')
             return redirect('core:produccion_list')
 
-        self.order = order
+        self.order = maquila
         return super().post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['order'] = self.order
+        context['maquila'] = self.order
         return context
 
     def form_valid(self, form):
@@ -1071,7 +1128,7 @@ class ProduccionCreateView(LoginRequiredMixin, CreateView):
         production_process.processed_by = self.request.user
         production_process.save()
 
-        # Cambiar estado del pedido
+        # Cambiar estado de la maquila
         self.order.complete_production()
         self.order.produced_by = self.request.user
         self.order.save()
@@ -1081,14 +1138,14 @@ class ProduccionCreateView(LoginRequiredMixin, CreateView):
             user=self.request.user,
             company=self.request.user.company,
             action='production_complete',
-            description=f'Proceso de producción completado para pedido {self.order.order_number}',
+            description=f'Proceso de producción completado para maquila {self.order.order_number}',
             ip_address=self.request.META.get('REMOTE_ADDR'),
             related_order=self.order
         )
 
         messages.success(
             self.request,
-            f'Proceso de producción completado para pedido {self.order.order_number}.'
+            f'Proceso de producción completado para maquila {self.order.order_number}.'
         )
 
         return redirect('core:produccion_list')
@@ -1102,12 +1159,12 @@ class ProduccionCreateView(LoginRequiredMixin, CreateView):
 
 class FacturacionListView(LoginRequiredMixin, ListView):
     """
-    Lista de pedidos listos para facturar.
+    Lista de maquilas listos para facturar.
     Acceso: aux_facturacion, admin_company, super_admin
     """
     model = Order
     template_name = 'core/facturacion/lista.html'
-    context_object_name = 'orders'
+    context_object_name = 'maquilas'
     paginate_by = 15
 
     def get_queryset(self):
@@ -1120,10 +1177,10 @@ class FacturacionListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         # Estadísticas de facturación
-        orders = self.get_queryset()
-        context['total_pending'] = orders.count()
-        context['with_invoice'] = orders.filter(invoice__isnull=False).count()
-        context['without_invoice'] = orders.filter(invoice__isnull=True).count()
+        maquilas = self.get_queryset()
+        context['total_pending'] = maquilas.count()
+        context['with_invoice'] = maquilas.filter(invoice__isnull=False).count()
+        context['without_invoice'] = maquilas.filter(invoice__isnull=True).count()
 
         # Facturas pendientes de pago
         context['pending_invoices'] = Invoice.objects.filter(
@@ -1140,60 +1197,60 @@ class FacturacionListView(LoginRequiredMixin, ListView):
 
 class FacturacionCreateView(LoginRequiredMixin, CreateView):
     """
-    Crear factura para un pedido.
+    Crear factura para una maquila.
     """
     model = Invoice
     form_class = FacturaForm
     template_name = 'core/facturacion/crear.html'
 
     def get(self, request, *args, **kwargs):
-        # Verificar que el pedido existe y está en estado correcto
+        # Verificar que la maquila existe y está en estado correcto
         order_id = self.kwargs.get('order_id')
         try:
-            order = Order.objects.get(
+            maquila = Order.objects.get(
                 id=order_id,
                 company=request.user.company,
                 state='ready_for_billing'
             )
             # Verificar que no tenga factura ya creada
-            if hasattr(order, 'invoice'):
-                messages.error(request, 'Este pedido ya tiene una factura creada.')
+            if hasattr(maquila, 'invoice'):
+                messages.error(request, 'Esta maquila ya tiene una factura creada.')
                 return redirect('core:facturacion_list')
         except Order.DoesNotExist:
-            messages.error(request, 'Pedido no encontrado o no disponible para facturación.')
+            messages.error(request, 'Maquila no encontrada o no disponible para facturación.')
             return redirect('core:facturacion_list')
 
-        self.order = order
+        self.order = maquila
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        # Verificar que el pedido existe y está en estado correcto
+        # Verificar que la maquila existe y está en estado correcto
         order_id = self.kwargs.get('order_id')
         try:
-            order = Order.objects.get(
+            maquila = Order.objects.get(
                 id=order_id,
                 company=request.user.company,
                 state='ready_for_billing'
             )
             # Verificar que no tenga factura ya creada
-            if hasattr(order, 'invoice'):
-                messages.error(request, 'Este pedido ya tiene una factura creada.')
+            if hasattr(maquila, 'invoice'):
+                messages.error(request, 'Esta maquila ya tiene una factura creada.')
                 return redirect('core:facturacion_list')
         except Order.DoesNotExist:
-            messages.error(request, 'Pedido no encontrado o no disponible para facturación.')
+            messages.error(request, 'Maquila no encontrada o no disponible para facturación.')
             return redirect('core:facturacion_list')
 
-        self.order = order
+        self.order = maquila
         return super().post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['order'] = self.order
+        context['maquila'] = self.order
         return context
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        # Poblar el subtotal con el total del pedido
+        # Poblar el subtotal con el total de la maquila
         initial = kwargs.get('initial', {})
         initial['subtotal'] = self.order.total_amount
         kwargs['initial'] = initial
@@ -1206,7 +1263,7 @@ class FacturacionCreateView(LoginRequiredMixin, CreateView):
         invoice.created_by = self.request.user
         invoice.save()
 
-        # Cambiar estado del pedido
+        # Cambiar estado de la maquila
         self.order.bill_order()
         self.order.billed_by = self.request.user
         self.order.save()
@@ -1216,7 +1273,7 @@ class FacturacionCreateView(LoginRequiredMixin, CreateView):
             user=self.request.user,
             company=self.request.user.company,
             action='invoice_create',
-            description=f'Factura {invoice.invoice_number} creada para pedido {self.order.order_number}',
+            description=f'Factura {invoice.invoice_number} creada para maquila {self.order.order_number}',
             ip_address=self.request.META.get('REMOTE_ADDR'),
             related_order=self.order,
             related_invoice=invoice
@@ -1224,7 +1281,7 @@ class FacturacionCreateView(LoginRequiredMixin, CreateView):
 
         messages.success(
             self.request,
-            f'Factura {invoice.invoice_number} creada exitosamente para pedido {self.order.order_number}.'
+            f'Factura {invoice.invoice_number} creada exitosamente para maquila {self.order.order_number}.'
         )
 
         return redirect('core:facturacion_list')
@@ -1314,6 +1371,7 @@ class ClienteCreateView(LoginRequiredMixin, CreateView):
             action='client_create',
             description=f'Cliente {client.full_name} creado exitosamente',
             ip_address=self.request.META.get('REMOTE_ADDR'),
+            related_order=None # No related maquila for client creation
         )
 
         messages.success(
@@ -1360,6 +1418,7 @@ class ClienteUpdateView(LoginRequiredMixin, UpdateView):
             action='client_update',
             description=f'Cliente {client.full_name} actualizado exitosamente',
             ip_address=self.request.META.get('REMOTE_ADDR'),
+            related_order=None # No related maquila for client update
         )
 
         messages.success(
@@ -1381,46 +1440,46 @@ class ClienteUpdateView(LoginRequiredMixin, UpdateView):
 # ==================== VISTAS AJAX ====================
 
 @login_required
-def pedido_detalle_ajax(request, pk):
+def maquila_detalle_ajax(request, pk):
     """
-    Vista AJAX para obtener detalle completo de un pedido.
+    Vista AJAX para obtener detalle completo de una maquila.
     """
     try:
-        order = Order.objects.select_related(
+        maquila = Order.objects.select_related(
             'client', 'created_by', 'toasted_by', 'produced_by', 'billed_by', 'delivered_by'
         ).get(id=pk, company=request.user.company)
 
         data = {
-            'id': order.id,
-            'order_number': order.order_number,
+            'id': maquila.id,
+            'order_number': maquila.order_number,
             'client': {
-                'name': order.client.full_name,
-                'document': f"{order.client.document_type.upper()}: {order.client.document_number}",
-                'phone': order.client.phone,
-                'email': order.client.email,
+                'name': maquila.client.full_name,
+                'document': f"{maquila.client.document_type.upper()}: {maquila.client.document_number}",
+                'phone': maquila.client.phone,
+                'email': maquila.client.email,
             },
-            'quantity_kg': str(order.quantity_kg),
-            'coffee_type': order.get_coffee_type_display(),
-            'price_per_kg': str(order.price_per_kg),
-            'total_amount': str(order.total_amount),
-            'packaging_type': order.packaging_type,
-            'packaging_details': order.packaging_details,
-            'delivery_method': order.get_delivery_method_display(),
-            'delivery_address': order.delivery_address,
-            'committed_date': order.committed_date.strftime('%Y-%m-%d') if order.committed_date else None,
-            'state': order.get_state_display(),
-            'state_code': order.state,
-            'created_at': order.created_at.strftime('%Y-%m-%d %H:%M'),
-            'created_by': order.created_by.get_full_name() if order.created_by else None,
-            'toasted_by': order.toasted_by.get_full_name() if order.toasted_by else None,
-            'produced_by': order.produced_by.get_full_name() if order.produced_by else None,
-            'billed_by': order.billed_by.get_full_name() if order.billed_by else None,
-            'delivered_by': order.delivered_by.get_full_name() if order.delivered_by else None,
+            'quantity_kg': str(maquila.quantity_kg),
+            'coffee_type': maquila.get_coffee_type_display(),
+            'kg_despues_trilla': str(maquila.kg_despues_trilla) if maquila.kg_despues_trilla is not None else None,
+            'porcentaje_reduccion_excelso': str(maquila.porcentaje_reduccion_excelso) if maquila.porcentaje_reduccion_excelso is not None else None,
+            'packaging_type': maquila.packaging_type,
+            'packaging_details': maquila.packaging_details,
+            'delivery_method': maquila.get_delivery_method_display(),
+            'delivery_address': maquila.delivery_address,
+            'committed_date': maquila.committed_date.strftime('%Y-%m-%d') if maquila.committed_date else None,
+            'state': maquila.get_state_display(),
+            'state_code': maquila.state,
+            'created_at': maquila.created_at.strftime('%Y-%m-%d %H:%M'),
+            'created_by': maquila.created_by.get_full_name() if maquila.created_by else None,
+            'toasted_by': maquila.toasted_by.get_full_name() if maquila.toasted_by else None,
+            'produced_by': maquila.produced_by.get_full_name() if maquila.produced_by else None,
+            'billed_by': maquila.billed_by.get_full_name() if maquila.billed_by else None,
+            'delivered_by': maquila.delivered_by.get_full_name() if maquila.delivered_by else None,
         }
 
         # Agregar información de procesos si existen
-        if hasattr(order, 'toasting_process'):
-            tp = order.toasting_process
+        if hasattr(maquila, 'toasting_process'):
+            tp = maquila.toasting_process
             data['toasting_process'] = {
                 'temperature': str(tp.temperature_celsius),
                 'time': tp.toasting_time_minutes,
@@ -1428,8 +1487,8 @@ def pedido_detalle_ajax(request, pk):
                 'yield_percentage': str(tp.yield_percentage),
             }
 
-        if hasattr(order, 'production_process'):
-            pp = order.production_process
+        if hasattr(maquila, 'production_process'):
+            pp = maquila.production_process
             data['production_process'] = {
                 'process_type': pp.get_process_type_display(),
                 'final_weight': str(pp.final_weight_kg),
@@ -1441,8 +1500,8 @@ def pedido_detalle_ajax(request, pk):
                 }
             }
 
-        if hasattr(order, 'invoice'):
-            inv = order.invoice
+        if hasattr(maquila, 'invoice'):
+            inv = maquila.invoice
             data['invoice'] = {
                 'number': inv.invoice_number,
                 'total': str(inv.total_amount),
@@ -1453,7 +1512,7 @@ def pedido_detalle_ajax(request, pk):
         return JsonResponse(data)
 
     except Order.DoesNotExist:
-        return JsonResponse({'error': 'Pedido no encontrado'}, status=404)
+        return JsonResponse({'error': 'Maquila no encontrada'}, status=404)
 
 
 @login_required

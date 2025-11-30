@@ -324,11 +324,11 @@ class OrderAdmin(admin.ModelAdmin):
     """
     Admin personalizado para pedidos con badges de estado y filtros avanzados.
     """
-    list_display = ['order_number', 'client', 'company', 'state_badge', 'quantity_kg', 'coffee_type', 'total_amount', 'committed_date', 'days_to_delivery', 'created_by', 'created_at']
+    list_display = ['order_number', 'client', 'company', 'state_badge', 'quantity_kg', 'coffee_type', 'kg_despues_trilla', 'porcentaje_reduccion_excelso', 'committed_date', 'days_to_delivery', 'created_by', 'created_at']
     list_filter = ['state', 'company', 'coffee_type', 'delivery_method', 'created_at', 'committed_date', 'created_by']
     search_fields = ['order_number', 'client__first_name', 'client__last_name', 'client__document_number']
     ordering = ['-created_at']
-    readonly_fields = ['order_number', 'total_amount', 'created_at', 'updated_at']
+    readonly_fields = ['order_number', 'kg_despues_trilla', 'porcentaje_reduccion_excelso', 'created_at', 'updated_at']
     date_hierarchy = 'created_at'
 
     fieldsets = (
@@ -336,7 +336,7 @@ class OrderAdmin(admin.ModelAdmin):
             'fields': ('order_number', 'client', 'company', 'created_by')
         }),
         ('Producto y Cantidades', {
-            'fields': ('quantity_kg', 'coffee_type', 'price_per_kg', 'total_amount')
+            'fields': ('quantity_kg', 'coffee_type', 'kg_despues_trilla', 'porcentaje_reduccion_excelso')
         }),
         ('Empaque y Entrega', {
             'fields': ('packaging_type', 'packaging_details', 'delivery_method', 'delivery_address', 'committed_date')

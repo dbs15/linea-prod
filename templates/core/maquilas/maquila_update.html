@@ -1,0 +1,840 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Editar Maquila {{ maquila.order_number }} - {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header con breadcrumbs -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-4">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="flex items-center space-x-4">
+                        <li>
+                            <div>
+                                <a href="{% url 'core:dashboard' %}" class="text-gray-400 hover:text-gray-500">
+                                    <i class="fas fa-home"></i>
+                                    <span class="sr-only">Dashboard</span>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                <a href="{% url 'core:maquila_list' %}" class="ml-4 text-gray-500 hover:text-gray-700">Maquilas</a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                <span class="ml-4 text-gray-900 font-medium">Editar Maquila {{ maquila.order_number }}</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header con progreso -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Editar Maquila {{ maquila.order_number }}</h1>
+                    <p class="mt-2 text-gray-600">Actualiza los detalles de la maquila {{ maquila.order_number }} para {{ company.name }}</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <i class="fas fa-plus-circle mr-2"></i>
+                        Paso <span id="currentStepNumber">1</span> de 2
+                    </span>
+                </div>
+            </div>
+
+            <!-- Barra de progreso -->
+            <div class="bg-white rounded-lg p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-700">Progreso</span>
+                    <span class="text-sm text-gray-500" id="progressText">50%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" id="progressBar" style="width: 50%"></div>
+                </div>
+                <div class="flex justify-between mt-2 text-xs text-gray-500">
+                    <span class="step-label active" data-step="1">Datos de la Maquila</span>
+                    <span class="step-label" data-step="2">Confirmación</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario multi-paso -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" id="maquilaForm">
+                {% csrf_token %}
+                <input type="hidden" name="current_step" id="currentStepInput" value="1">
+
+                <!-- Paso 1: Datos de la Maquila -->
+                <div class="step-content" id="step1">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
+                                    <i class="fas fa-box-open text-white text-sm"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Paso 1: Datos de la Maquila</h3>
+                                <p class="text-sm text-gray-500">Ingresa todos los detalles de la maquila a procesar</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label for="id_client" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Cliente <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.client }}
+                                {% if form.client.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.client.errors.0 }}</p>
+                                {% endif %}
+                                <p class="mt-1 text-sm text-gray-500">
+                                    Si no encuentras el cliente, primero debes
+                                    <a href="{% url 'core:cliente_create' %}" class="text-blue-600 hover:text-blue-800 font-medium" target="_blank">
+                                        crear el cliente
+                                    </a>
+                                    desde el módulo de gestión de clientes.
+                                </p>
+                            </div>
+
+                            <div>
+                                <label for="{{ form.quantity_kg.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Cantidad en KG <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.quantity_kg }}
+                                {% if form.quantity_kg.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.quantity_kg.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="{{ form.coffee_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tipo de Café <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.coffee_type }}
+                                {% if form.coffee_type.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.coffee_type.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div id="kgDespuesTrillaWrapper" style="display:none;">
+                                <label for="id_kg_despues_trilla" class="block text-sm font-medium text-gray-700 mb-2">KG después de trilla (Excelso)</label>
+                                {{ form.kg_despues_trilla }}
+                                {% if form.kg_despues_trilla.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.kg_despues_trilla.errors.0 }}</p>
+                                {% endif %}
+                                <p class="mt-1 text-sm text-blue-600" id="porcentajeReduccionDisplay">
+                                    Reducción: <span id="calculatedPorcentajeReduccion">0.00</span>%
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                            <h4 class="text-md font-medium text-gray-800 mb-3">Historial de Café</h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Café</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kilos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="coffeeHistoryTableBody" class="bg-white divide-y divide-gray-200">
+                                        <!-- Filas de historial se añadirán aquí con JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="mt-3 text-sm text-blue-600" id="historialPorcentajeReduccionDisplay" style="display:none;">
+                                Reducción total: <span id="historialCalculatedPorcentajeReduccion">0.00</span>%
+                            </p>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="{{ form.packaging_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tipo de Empaque <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.packaging_type }}
+                                {% if form.packaging_type.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.packaging_type.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="{{ form.delivery_method.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Método de Entrega <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.delivery_method }}
+                                {% if form.delivery_method.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.delivery_method.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="{{ form.packaging_details.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Detalles del Empaque
+                            </label>
+                            {{ form.packaging_details }}
+                            {% if form.packaging_details.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.packaging_details.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="{{ form.delivery_address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Dirección de Entrega
+                            </label>
+                            {{ form.delivery_address }}
+                            {% if form.delivery_address.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.delivery_address.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="{{ form.committed_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Fecha Comprometida <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.committed_date }}
+                            {% if form.committed_date.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.committed_date.errors.0 }}</p>
+                                {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Confirmación -->
+                <div class="step-content hidden" id="step2">
+                    <div class="px-6 py-6">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-green-500 rounded-full">
+                                    <i class="fas fa-check-circle text-white text-sm"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Paso 2: Confirmación</h3>
+                                <p class="text-sm text-gray-500">Revisa los detalles de la maquila antes de actualizar</p>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Resumen de la Maquila -->
+                        <div class="bg-gray-50 rounded-lg p-6 mt-8">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4">Resumen de la Maquila</h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Cliente</h5>
+                                    <p class="text-sm text-gray-600" id="summaryClient">No seleccionado</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Cantidad Recibida</h5>
+                                    <p class="text-sm text-gray-600" id="summaryQuantity">0 kg</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Tipo de Café</h5>
+                                    <p class="text-sm text-gray-600" id="summaryCoffeeType">No especificado</p>
+                                </div>
+
+                                <div id="summaryKgDespuesTrillaWrapper" style="display:none;">
+                                    <h5 class="font-medium text-gray-700 mb-2">KG después de trilla (Excelso)</h5>
+                                    <p class="text-sm text-gray-600" id="summaryKgDespuesTrilla">0 kg</p>
+                                </div>
+
+                                <div id="summaryPorcentajeReduccionWrapper" style="display:none;">
+                                    <h5 class="font-medium text-gray-700 mb-2">Reducción Excelso (%)</h5>
+                                    <p class="text-sm text-gray-600" id="summaryPorcentajeReduccion">0%</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Tipo de Empaque</h5>
+                                    <p class="text-sm text-gray-600" id="summaryPackagingType">No especificado</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Método de Entrega</h5>
+                                    <p class="text-sm text-gray-600" id="summaryDeliveryMethod">No especificado</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Dirección de Entrega</h5>
+                                    <p class="text-sm text-gray-600" id="summaryDeliveryAddress">No especificada</p>
+                                </div>
+
+                                <div>
+                                    <h5 class="font-medium text-gray-700 mb-2">Fecha Comprometida</h5>
+                                    <p class="text-sm text-gray-600" id="summaryCommittedDate">Fecha no definida</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div class="flex">
+                                    <i class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i>
+                                    <div>
+                                        <h5 class="text-sm font-medium text-yellow-800">Confirmación</h5>
+                                        <p class="text-sm text-yellow-700 mt-1">
+                                            Al actualizar esta maquila, los cambios se reflejarán en el sistema.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navegación entre pasos -->
+                <div class="px-6 py-4 bg-gray-50 border-t">
+                    <div class="flex items-center justify-between">
+                        <button type="button" id="prevBtn"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Anterior
+                        </button>
+
+                        <div class="flex space-x-3">
+                            <button type="button" id="nextBtn"
+                                    class="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Siguiente
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+
+                            <button type="submit" id="submitBtn"
+                                    class="hidden inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                <i class="fas fa-save mr-2"></i>
+                                Actualizar Maquila
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <i class="fas fa-check text-green-600"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mt-4">Maquila Actualizada Exitosamente</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">
+                    La maquila ha sido actualizada correctamente.
+                </p>
+            </div>
+            <div class="flex items-center px-4 py-3">
+                <button id="viewMaquilaBtn"
+                        class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    Ver Maquila
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos de navegación
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const currentStepInput = document.getElementById('currentStepInput');
+    const currentStepNumber = document.getElementById('currentStepNumber');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const stepLabels = document.querySelectorAll('.step-label');
+
+    // Elementos de formulario
+    const form = document.getElementById('maquilaForm');
+    const quantityInput = document.getElementById('id_quantity_kg');
+    const clientSelect = document.getElementById('id_client');
+
+    // Nuevos elementos para KG después de trilla y Porcentaje de reducción
+    const coffeeTypeSelect = document.getElementById('id_coffee_type');
+    const kgDespuesTrillaWrapper = document.getElementById('kgDespuesTrillaWrapper');
+    const kgDespuesTrillaInput = document.getElementById('id_kg_despues_trilla');
+    const porcentajeReduccionDisplay = document.getElementById('porcentajeReduccionDisplay');
+    const calculatedPorcentajeReduccion = document.getElementById('calculatedPorcentajeReduccion');
+
+    // Nuevos elementos para la tabla de historial de café
+    const coffeeHistoryTableBody = document.getElementById('coffeeHistoryTableBody');
+    const historialPorcentajeReduccionDisplay = document.getElementById('historialPorcentajeReduccionDisplay');
+    const historialCalculatedPorcentajeReduccion = document.getElementById('historialCalculatedPorcentajeReduccion');
+
+    // Elementos de resumen
+    const summaryClient = document.getElementById('summaryClient');
+    const summaryQuantity = document.getElementById('summaryQuantity');
+    const summaryCoffeeType = document.getElementById('summaryCoffeeType');
+    const summaryKgDespuesTrillaWrapper = document.getElementById('summaryKgDespuesTrillaWrapper');
+    const summaryKgDespuesTrilla = document.getElementById('summaryKgDespuesTrilla');
+    const summaryPorcentajeReduccionWrapper = document.getElementById('summaryPorcentajeReduccionWrapper');
+    const summaryPorcentajeReduccion = document.getElementById('summaryPorcentajeReduccion');
+    const summaryPackagingType = document.getElementById('summaryPackagingType');
+    const summaryDeliveryMethod = document.getElementById('summaryDeliveryMethod');
+    const summaryDeliveryAddress = document.getElementById('summaryDeliveryAddress');
+    const summaryCommittedDate = document.getElementById('summaryCommittedDate');
+    const packagingTypeInput = document.getElementById('id_packaging_type');
+    const packagingDetailsInput = document.getElementById('id_packaging_details');
+    const deliveryMethodSelect = document.getElementById('id_delivery_method');
+    const deliveryAddressInput = document.getElementById('id_delivery_address');
+    const committedDateInput = document.getElementById('id_committed_date');
+
+    let currentStep = 1;
+    const totalSteps = 2; // Ahora son 2 pasos
+
+    // Función para precargar datos de la maquila si estamos editando
+    function loadMaquilaData() {
+        const maquilaData = {
+            client: { id: "{{ maquila.client.id }}" },
+            quantity_kg: "{{ maquila.quantity_kg|default:'0.00' }}",
+            coffee_type: "{{ maquila.coffee_type }}",
+            kg_despues_trilla: "{{ maquila.kg_despues_trilla|default:'' }}",
+            porcentaje_reduccion_excelso: "{{ maquila.porcentaje_reduccion_excelso|default:'0.00' }}",
+            packaging_type: "{{ maquila.packaging_type }}",
+            packaging_details: "{{ maquila.packaging_details }}",
+            delivery_method: "{{ maquila.delivery_method }}",
+            delivery_address: "{{ maquila.delivery_address }}",
+            committed_date: "{{ maquila.committed_date|date:'Y-m-d' }}",
+            original_coffee_type: "{{ maquila.original_coffee_type }}",
+        };
+
+
+        if (maquilaData) {
+            // Precarga de campos de formulario
+            clientSelect.value = maquilaData.client.id;
+            quantityInput.value = parseFloat(maquilaData.quantity_kg).toFixed(2);
+            coffeeTypeSelect.value = maquilaData.coffee_type;
+            if (maquilaData.kg_despues_trilla) {
+                kgDespuesTrillaInput.value = parseFloat(maquilaData.kg_despues_trilla).toFixed(2);
+            } else {
+                kgDespuesTrillaInput.value = '';
+            }
+            packagingTypeInput.value = maquilaData.packaging_type;
+            packagingDetailsInput.value = maquilaData.packaging_details;
+            deliveryMethodSelect.value = maquilaData.delivery_method;
+            deliveryAddressInput.value = maquilaData.delivery_address;
+            committedDateInput.value = maquilaData.committed_date;
+
+            toggleKgDespuesTrilla(maquilaData.original_coffee_type); // Pasar original_coffee_type
+            calculatePorcentajeReduccion(maquilaData.original_coffee_type);
+            updateValidations();
+            updateSummary(); // Actualizar resumen inicial
+            updateCoffeeHistoryTable(); // Actualizar la tabla de historial inicial
+        }
+    }
+
+    // Navegación entre pasos
+    function showStep(step) {
+        // Ocultar todos los pasos
+        document.querySelectorAll('.step-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+
+        // Mostrar paso actual
+        document.getElementById(`step${step}`).classList.remove('hidden');
+
+        // Actualizar navegación
+        prevBtn.style.display = step === 1 ? 'none' : 'inline-flex';
+        // El botón Siguiente se oculta si estamos en el último paso (Paso 2) y el de Submit se muestra
+        nextBtn.style.display = step === totalSteps ? 'none' : 'inline-flex';
+        submitBtn.style.display = step === totalSteps ? 'inline-flex' : 'none';
+
+        // Actualizar barra de progreso
+        const progress = (step / totalSteps) * 100;
+        progressBar.style.width = `${progress}%`;
+        progressText.textContent = `${Math.round(progress)}%`;
+        currentStepNumber.textContent = step;
+        currentStepInput.value = step;
+
+        // Actualizar labels de pasos
+        stepLabels.forEach((label, index) => {
+            if (index + 1 <= step) {
+                label.classList.add('active');
+            } else {
+                label.classList.remove('active');
+            }
+        });
+
+        // Actualizar campos condicionales en el paso 1 (antes era paso 2)
+        if (step === 1) {
+            const originalCoffeeType = "{{ maquila.original_coffee_type }}";
+            toggleKgDespuesTrilla(originalCoffeeType);
+            updateCoffeeHistoryTable(); // Asegurarse de que la tabla se actualice al volver al paso 1
+        }
+        if (step === 2) { // Ahora el paso 2 es la confirmación
+            updateSummary(); // Actualizar resumen directamente en el paso 2
+            updateCoffeeHistoryTable(); // Asegurarse de que la tabla se actualice en el resumen
+        }
+    }
+
+    function nextStep() {
+        if (validateCurrentStep()) {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    }
+
+    // Validación de pasos
+    function validateCurrentStep() {
+        const errors = [];
+        const originalCoffeeType = "{{ maquila.original_coffee_type }}";
+
+        switch (currentStep) {
+            case 1: // Datos de la Maquila (fusionado)
+                // Validaciones de Recepción
+                if (!clientSelect || !clientSelect.value) {
+                    errors.push('Debe seleccionar un cliente');
+                }
+                if (!quantityInput || !quantityInput.value || parseFloat(quantityInput.value) <= 0) {
+                    errors.push('La cantidad debe ser mayor a 0');
+                }
+
+                // Validaciones para Tipo de Café
+                if (!coffeeTypeSelect || !coffeeTypeSelect.value) {
+                    errors.push('Debe seleccionar un tipo de café');
+                }
+
+                // Lógica condicional para kg_despues_trilla
+                if (originalCoffeeType === 'cps' && coffeeTypeSelect.value === 'excelso') {
+                    if (!kgDespuesTrillaInput || !kgDespuesTrillaInput.value) {
+                        errors.push('Los KG después de trilla son obligatorios cuando el café original fue CPS y se ha cambiado a Excelso.');
+                    } else { 
+                        const kgDespuesTrillaVal = parseFloat(kgDespuesTrillaInput.value);
+                        const quantityVal = parseFloat(quantityInput.value);
+
+                        if (isNaN(kgDespuesTrillaVal) || kgDespuesTrillaVal <= 0) {
+                            errors.push('Los KG después de trilla deben ser un número positivo.');
+                        }
+                        if (kgDespuesTrillaVal > quantityVal) {
+                            errors.push('Los KG después de trilla no pueden ser mayores que la cantidad inicial de CPS.');
+                        }
+                    }
+                } else {
+                    kgDespuesTrillaInput.value = ''; // Asegurarse de que el campo esté vacío si no es relevante
+                }
+
+                // Validaciones para Tipo de Empaque
+                if (!packagingTypeInput || !packagingTypeInput.value) {
+                    errors.push('Debe especificar el tipo de empaque');
+                }
+
+                // Validaciones para Método de Entrega
+                if (!deliveryMethodSelect || !deliveryMethodSelect.value) {
+                    errors.push('Debe seleccionar un método de entrega');
+                }
+
+                // Validaciones para Fecha Comprometida
+                const committedDate = committedDateInput;
+                if (!committedDate || !committedDate.value) {
+                    errors.push('Debe seleccionar una fecha comprometida');
+                } else {
+                    const selectedDate = new Date(committedDate.value);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (selectedDate < today) {
+                        errors.push('La fecha comprometida no puede ser anterior a hoy');
+                    }
+                }
+                // No hay validaciones específicas para packagingDetailsInput o deliveryAddressInput porque no son obligatorios
+                break;
+            
+            case 2: // Confirmación (no requiere validaciones de entrada de datos)
+                // La validación se hizo en el paso 1
+                break;
+        }
+
+        if (errors.length > 0) {
+            alert('Por favor, corrige los siguientes errores:\n' + errors.join('\n'));
+            return false;
+        }
+
+        return true;
+    }
+
+    // Lógica para mostrar/ocultar y calcular campos condicionales
+    function toggleKgDespuesTrilla(originalCoffeeType) {
+        if (originalCoffeeType === 'cps' && coffeeTypeSelect.value === 'excelso') {
+            kgDespuesTrillaWrapper.style.display = 'block';
+            porcentajeReduccionDisplay.style.display = 'block';
+        } else {
+            kgDespuesTrillaWrapper.style.display = 'none';
+            porcentajeReduccionDisplay.style.display = 'none';
+            kgDespuesTrillaInput.value = '';
+            calculatedPorcentajeReduccion.textContent = '0.00';
+        }
+        calculatePorcentajeReduccion(originalCoffeeType);
+        updateCoffeeHistoryTable(); // Actualizar la tabla de historial aquí
+    }
+
+    function calculatePorcentajeReduccion(originalCoffeeType) {
+        const quantity = parseFloat(quantityInput?.value) || 0;
+        const kgDespuesTrilla = parseFloat(kgDespuesTrillaInput?.value) || 0;
+        let percentage = 0;
+
+        if (originalCoffeeType === 'cps' && coffeeTypeSelect.value === 'excelso' && quantity > 0 && kgDespuesTrilla > 0 && kgDespuesTrilla <= quantity) {
+            percentage = ((quantity - kgDespuesTrilla) / quantity) * 100;
+        }
+        calculatedPorcentajeReduccion.textContent = percentage.toFixed(2);
+
+        // Actualizar el resumen si estamos en el paso 2
+        if (currentStep === totalSteps) {
+            updateSummary();
+        }
+        updateCoffeeHistoryTable(); // Actualizar la tabla de historial aquí también
+    }
+
+    // Función para actualizar la tabla de historial del café
+    function updateCoffeeHistoryTable() {
+        if (!coffeeHistoryTableBody) return; // Salir si el elemento no existe
+
+        // Limpiar filas existentes
+        coffeeHistoryTableBody.innerHTML = '';
+
+        const originalCoffeeType = "{{ maquila.original_coffee_type }}";
+        const currentCoffeeType = coffeeTypeSelect.value;
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const kgDespuesTrilla = parseFloat(kgDespuesTrillaInput.value) || 0;
+        const percentage = parseFloat(calculatedPorcentajeReduccion.textContent) || 0;
+
+        // Fila para el tipo de café original
+        let originalCoffeeTypeText = '';
+        if (originalCoffeeType === 'cps') {
+            originalCoffeeTypeText = 'CPS';
+        } else if (originalCoffeeType === 'excelso') {
+            originalCoffeeTypeText = 'Excelso';
+        } else { // Caso de creación donde original_coffee_type aún no está definido por el backend
+             if (currentCoffeeType === 'cps') {
+                 originalCoffeeTypeText = 'CPS';
+             } else if (currentCoffeeType === 'excelso') {
+                 originalCoffeeTypeText = 'Excelso';
+             }
+        }
+
+        if (originalCoffeeTypeText && quantity > 0) {
+            const rowOriginal = coffeeHistoryTableBody.insertRow();
+            rowOriginal.className = 'bg-white';
+            const cellTypeOriginal = rowOriginal.insertCell();
+            const cellKgsOriginal = rowOriginal.insertCell();
+            cellTypeOriginal.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
+            cellKgsOriginal.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+            cellTypeOriginal.textContent = originalCoffeeTypeText;
+            cellKgsOriginal.textContent = `${quantity.toFixed(2)} kg`;
+        }
+
+        // Fila para Excelso si hubo trilla de CPS
+        if (originalCoffeeType === 'cps' && currentCoffeeType === 'excelso' && kgDespuesTrilla > 0) {
+            const rowExcelso = coffeeHistoryTableBody.insertRow();
+            rowExcelso.className = 'bg-white';
+            const cellTypeExcelso = rowExcelso.insertCell();
+            const cellKgsExcelso = rowExcelso.insertCell();
+            cellTypeExcelso.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
+            cellKgsExcelso.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+            cellTypeExcelso.textContent = 'Excelso';
+            cellKgsExcelso.textContent = `${kgDespuesTrilla.toFixed(2)} kg`;
+        }
+
+        // Mostrar porcentaje de reducción debajo de la tabla si aplica
+        if (originalCoffeeType === 'cps' && currentCoffeeType === 'excelso' && percentage > 0) {
+            historialPorcentajeReduccionDisplay.style.display = 'block';
+            historialCalculatedPorcentajeReduccion.textContent = percentage.toFixed(2);
+        } else {
+            historialPorcentajeReduccionDisplay.style.display = 'none';
+            historialCalculatedPorcentajeReduccion.textContent = '0.00';
+        }
+    }
+
+    // Actualizar resumen
+    function updateSummary() {
+        // Cliente
+        if (clientSelect && clientSelect.selectedOptions[0]) {
+            summaryClient.textContent = clientSelect.selectedOptions[0].text;
+        }
+
+        // Cantidad Recibida
+        if (quantityInput) {
+            summaryQuantity.textContent = `${quantityInput.value} kg`;
+        }
+
+        // Tipo de Café
+        if (coffeeTypeSelect && coffeeTypeSelect.selectedOptions[0]) {
+            summaryCoffeeType.textContent = coffeeTypeSelect.selectedOptions[0].text;
+        }
+
+        // KG después de trilla y Porcentaje de reducción
+        const originalCoffeeType = "{{ maquila.original_coffee_type }}";
+        if (originalCoffeeType === 'cps' && coffeeTypeSelect.value === 'excelso') {
+            summaryKgDespuesTrillaWrapper.style.display = 'block';
+            summaryKgDespuesTrilla.textContent = `${kgDespuesTrillaInput.value || 0} kg`;
+            summaryPorcentajeReduccionWrapper.style.display = 'block';
+            summaryPorcentajeReduccion.textContent = `${calculatedPorcentajeReduccion.textContent}%`;
+        } else {
+            summaryKgDespuesTrillaWrapper.style.display = 'none';
+            summaryPorcentajeReduccionWrapper.style.display = 'none';
+        }
+
+        // Tipo de Empaque
+        if (packagingTypeInput) {
+            summaryPackagingType.textContent = packagingTypeInput.value;
+        }
+
+        // Método de Entrega
+        if (deliveryMethodSelect && deliveryMethodSelect.selectedOptions[0]) {
+            summaryDeliveryMethod.textContent = deliveryMethodSelect.selectedOptions[0].text;
+        }
+
+        // Dirección de Entrega
+        if (deliveryAddressInput && deliveryAddressInput.value) {
+            summaryDeliveryAddress.textContent = deliveryAddressInput.value;
+        } else {
+            summaryDeliveryAddress.textContent = 'No especificada';
+        }
+
+        // Fecha Comprometida
+        if (committedDateInput && committedDateInput.value) {
+            const date = new Date(committedDateInput.value);
+            summaryCommittedDate.textContent = date.toLocaleDateString('es-ES');
+        } else {
+            summaryCommittedDate.textContent = 'No definida';
+        }
+    }
+
+    // Actualizar validaciones visuales
+    function updateValidations() {
+        const quantityValidation = document.getElementById('quantityValidation');
+        const clientValidation = document.getElementById('clientValidation');
+
+        // Validar cantidad
+        if (quantityInput && quantityInput.value && parseFloat(quantityInput.value) > 0) {
+            quantityValidation.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Cantidad válida';
+        } else {
+            quantityValidation.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i>Cantidad requerida';
+        }
+
+        // Validar cliente
+        if (clientSelect && clientSelect.value) {
+            clientValidation.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Cliente seleccionado';
+        } else {
+            clientValidation.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i>Cliente requerido';
+        }
+    }
+
+    // Event listeners
+    if (nextBtn) {
+        nextBtn.addEventListener('click', nextStep);
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', prevStep);
+    }
+
+    if (quantityInput) {
+        quantityInput.addEventListener('input', function() {
+            const originalCoffeeType = "{{ maquila.original_coffee_type }}";
+            calculatePorcentajeReduccion(originalCoffeeType);
+            updateValidations();
+            if (currentStep === 1) updateSummary(); // Actualizar resumen si se cambia en el paso 1
+            updateCoffeeHistoryTable(); // Añadir esta línea
+        });
+    }
+
+    if (coffeeTypeSelect) {
+        coffeeTypeSelect.addEventListener('change', function() {
+            const originalCoffeeType = "{{ maquila.original_coffee_type }}";
+            toggleKgDespuesTrilla(originalCoffeeType);
+            calculatePorcentajeReduccion(originalCoffeeType);
+            if (currentStep === 1) updateSummary(); // Actualizar resumen si se cambia en el paso 1
+            updateCoffeeHistoryTable(); // Añadir esta línea
+        });
+    }
+
+    if (kgDespuesTrillaInput) {
+        kgDespuesTrillaInput.addEventListener('input', function() {
+            const originalCoffeeType = "{{ maquila.original_coffee_type }}";
+            calculatePorcentajeReduccion(originalCoffeeType);
+            if (currentStep === 1) updateSummary(); // Actualizar resumen si se cambia en el paso 1
+            updateCoffeeHistoryTable(); // Añadir esta línea
+        });
+    }
+
+    if (clientSelect) {
+        clientSelect.addEventListener('change', function() {
+            updateValidations();
+            if (currentStep === 1) updateSummary(); // Actualizar resumen si se cambia en el paso 1
+            updateCoffeeHistoryTable(); // Añadir esta línea
+        });
+    }
+
+    if (packagingTypeInput) { packagingTypeInput.addEventListener('input', function() { if (currentStep === 1) updateSummary(); }); }
+    if (packagingDetailsInput) { packagingDetailsInput.addEventListener('input', function() { if (currentStep === 1) updateSummary(); }); }
+    if (deliveryMethodSelect) { deliveryMethodSelect.addEventListener('change', function() { if (currentStep === 1) updateSummary(); }); }
+    if (deliveryAddressInput) { deliveryAddressInput.addEventListener('input', function() { if (currentStep === 1) updateSummary(); }); }
+    if (committedDateInput) { committedDateInput.addEventListener('change', function() { if (currentStep === 1) updateSummary(); }); }
+
+    // Validación final del formulario
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // La validación ahora se realiza en nextStep para el paso 1
+            // Pero para el submit final, debemos validar el paso 1 de nuevo si se intenta enviar directamente.
+            if (currentStep === 1 && !validateCurrentStep()) {
+                e.preventDefault();
+                return false;
+            }
+            // Si estamos en el paso de confirmación (Paso 2), no necesitamos validar nuevamente
+            // ya que el paso 1 ya fue validado antes de llegar aquí.
+        });
+    }
+
+    // Inicialización
+    loadMaquilaData();
+    showStep(1);
+    updateValidations();
+
+    // Botón para ver maquila (en el modal de confirmación)
+    const viewMaquilaBtn = document.getElementById('viewMaquilaBtn');
+    if (viewMaquilaBtn) {
+        viewMaquilaBtn.addEventListener('click', function() {
+            window.location.href = '{% url "core:maquila_list" %}';
+        });
+    }
+});
+</script>
+
+<style>
+.step-label.active {
+    @apply text-blue-600 font-medium;
+}
+
+.step-label:not(.active) {
+    @apply text-gray-400;
+}
+</style>
+{% endblock %}

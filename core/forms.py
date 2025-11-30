@@ -213,7 +213,7 @@ class ClienteForm(forms.ModelForm):
     class Meta:
         model = Client
         fields = [
-            'first_name', 'last_name', 'document_type', 'document_number',
+            'first_name', 'last_name', 'business_name', 'document_type', 'document_number',
             'phone', 'email', 'address', 'city', 'client_type', 'notes'
         ]
         widgets = {
@@ -226,6 +226,10 @@ class ClienteForm(forms.ModelForm):
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
                 'placeholder': 'Apellidos',
                 'required': True
+            }),
+            'business_name': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Razón social (opcional)'
             }),
             'document_type': forms.Select(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -302,16 +306,16 @@ class ClienteForm(forms.ModelForm):
         return client
 
 
-class PedidoForm(forms.ModelForm):
+class MaquilaForm(forms.ModelForm):
     """
-    Formulario para pedidos con selección de cliente existente.
+    Formulario para maquila con selección de cliente existente.
     Los clientes deben crearse previamente desde el módulo de gestión de clientes.
     """
     # Campo para seleccionar cliente existente (requerido)
     client = forms.ModelChoiceField(
         queryset=Client.objects.none(),
         required=True,
-        empty_label="Seleccionar cliente",
+        empty_label="Seleccionar cliente para maquila",
         widget=forms.Select(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
         })
@@ -320,8 +324,9 @@ class PedidoForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = [
-            'quantity_kg', 'coffee_type', 'price_per_kg', 'packaging_type',
-            'packaging_details', 'delivery_method', 'delivery_address', 'committed_date'
+            'quantity_kg', 'coffee_type', 'packaging_type',
+            'packaging_details', 'delivery_method', 'delivery_address', 'committed_date',
+            'kg_despues_trilla' # Nuevo campo
         ]
         # El campo 'client' se define fuera del Meta porque es un ModelChoiceField personalizado
         widgets = {
@@ -333,10 +338,11 @@ class PedidoForm(forms.ModelForm):
             'coffee_type': forms.Select(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
             }),
-            'price_per_kg': forms.NumberInput(attrs={
+            'kg_despues_trilla': forms.NumberInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
                 'placeholder': '0.00',
-                'step': '0.01'
+                'step': '0.01',
+                'min': '0',
             }),
             'packaging_type': forms.TextInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
@@ -379,6 +385,24 @@ class PedidoForm(forms.ModelForm):
         committed_date = cleaned_data.get('committed_date')
         if committed_date and committed_date < timezone.now().date():
             raise ValidationError('La fecha comprometida no puede ser en el pasado.')
+
+        # Lógica condicional para kg_despues_trilla
+        coffee_type = cleaned_data.get('coffee_type')
+        kg_despues_trilla = cleaned_data.get('kg_despues_trilla')
+        original_coffee_type = self.instance.original_coffee_type if self.instance else None
+
+        # kg_despues_trilla solo es relevante si el original fue CPS y ahora es Excelso
+        if original_coffee_type == 'cps' and coffee_type == 'excelso':
+            if kg_despues_trilla is None:
+                self.add_error('kg_despues_trilla', 'Este campo es obligatorio cuando el café es CPS original y se ha trillado a Excelso.')
+            elif kg_despues_trilla <= 0: # Asegurar que sea positivo
+                self.add_error('kg_despues_trilla', 'Los kilos después de trilla deben ser un número positivo.')
+            elif cleaned_data.get('quantity_kg') and kg_despues_trilla > cleaned_data['quantity_kg']:
+                self.add_error('kg_despues_trilla', 'Los kilos después de trilla no pueden ser mayores que los kilos recibidos (CPS).')
+        else:
+            # Si no aplica la lógica condicional, asegurarse de que el campo esté nulo.
+            if 'kg_despues_trilla' in cleaned_data: 
+                cleaned_data['kg_despues_trilla'] = None
 
         return cleaned_data
 
@@ -725,4 +749,5 @@ class FacturaForm(forms.ModelForm):
 
         if due_date and issue_date and due_date <= issue_date:
             raise ValidationError('La fecha de vencimiento debe ser posterior a la fecha de emisión.')
+        return due_date
         return due_date

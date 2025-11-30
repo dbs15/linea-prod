@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Pedidos para Facturar - {{ company.name }}{% endblock %}
+{% block title %}Maquilas para Facturar - {{ company.name }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50">
@@ -9,8 +9,8 @@
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Pedidos para Facturar</h1>
-                    <p class="mt-2 text-gray-600">Genera facturas para pedidos completados</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Maquilas para Facturar</h1>
+                    <p class="mt-2 text-gray-600">Genera facturas para maquilas completadas</p>
                 </div>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                     <i class="fas fa-file-invoice-dollar mr-2"></i>
@@ -70,16 +70,16 @@
             </div>
         </div>
 
-        <!-- Lista de Pedidos -->
+        <!-- Lista de Maquilas -->
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
             <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Pedidos Disponibles</h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500">Selecciona un pedido para generar su factura</p>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Maquilas Disponibles</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Selecciona una maquila para generar su factura</p>
             </div>
 
             {% if object_list %}
                 <ul class="divide-y divide-gray-200">
-                    {% for order in object_list %}
+                    {% for maquila in object_list %}
                     <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
@@ -89,27 +89,26 @@
                                 <div class="ml-4">
                                     <div class="flex items-center">
                                         <h4 class="text-sm font-medium text-gray-900">
-                                            Pedido #{{ order.order_number }}
+                                            Maquila #{{ maquila.order_number }}
                                         </h4>
                                         <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                            {{ order.get_state_display }}
+                                            {{ maquila.get_state_display }}
                                         </span>
                                     </div>
                                     <div class="text-sm text-gray-500">
-                                        <span class="font-medium">{{ order.client.full_name }}</span>
-                                        • Total: ${{ order.total_amount }}
-                                        • Fecha: {{ order.created_at|date:"d/m/Y" }}
+                                        <span class="font-medium">{{ maquila.client.full_name }}</span>
+                                        • Fecha: {{ maquila.created_at|date:"d/m/Y" }}
                                     </div>
                                 </div>
                             </div>
 
                             <div class="flex items-center space-x-2">
-                                {% if order.invoice %}
+                                {% if maquila.invoice %}
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <i class="fas fa-check-circle mr-1"></i>
                                         Facturado
                                     </span>
-                                    <button onclick="showInvoiceDetail({{ order.invoice.id }})"
+                                    <button onclick="showInvoiceDetail({{ maquila.invoice.id }})"
                                             class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                                         <i class="fas fa-eye mr-1"></i>
                                         Ver Factura
@@ -119,7 +118,7 @@
                                         <i class="fas fa-clock mr-1"></i>
                                         Pendiente
                                     </span>
-                                    <a href="{% url 'core:facturacion_create' order.id %}"
+                                    <a href="{% url 'core:facturacion_create' maquila.id %}"
                                        class="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700">
                                         <i class="fas fa-file-invoice-dollar mr-1"></i>
                                         Facturar
@@ -135,12 +134,12 @@
                     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-file-invoice-dollar text-gray-400 text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No hay pedidos pendientes</h3>
-                    <p class="text-gray-500 mb-6">Todos los pedidos han sido facturados o no hay pedidos listos para facturar.</p>
-                    <a href="{% url 'core:pedido_list' %}"
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No hay maquilas pendientes</h3>
+                    <p class="text-gray-500 mb-6">Todas las maquilas han sido facturadas o no hay maquilas listas para facturar.</p>
+                    <a href="{% url 'core:maquila_list' %}"
                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
                         <i class="fas fa-arrow-left mr-2"></i>
-                        Ver Todos los Pedidos
+                        Ver Todas las Maquilas
                     </a>
                 </div>
             {% endif %}

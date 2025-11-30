@@ -181,6 +181,7 @@ class Client(models.Model):
     )
     first_name = models.CharField(max_length=50, verbose_name="Nombres")
     last_name = models.CharField(max_length=50, verbose_name="Apellidos")
+    business_name = models.CharField(max_length=100, blank=True, verbose_name="Razón social")
     document_type = models.CharField(
         max_length=10,
         choices=[
@@ -221,10 +222,6 @@ class Client(models.Model):
         """Obtiene el último pedido del cliente"""
         return self.orders.order_by('-created_at').first()
 
-    def get_total_orders_value(self):
-        """Calcula el valor total de todos los pedidos"""
-        return sum(order.total_amount for order in self.orders.all())
-
     class Meta:
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
@@ -256,8 +253,6 @@ class Order(models.Model):
     PACKAGING_PRESENTATION_CHOICES = [
         ('cps', 'CPS (Café Pergamino Seco)'),
         ('excelso', 'Excelso'),
-        ('supremo', 'Supremo'),
-        ('extra', 'Extra'),
     ]
 
     COFFEE_TYPE_CHOICES = PACKAGING_PRESENTATION_CHOICES  # Alias for compatibility
@@ -285,16 +280,29 @@ class Order(models.Model):
         default='excelso',
         verbose_name="Tipo de café"
     )
-    price_per_kg = models.DecimalField(
+    original_coffee_type = models.CharField(
+        max_length=20,
+        choices=PACKAGING_PRESENTATION_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de café original (recepción)"
+    )
+
+    # Nuevos campos para el proceso de maquila
+    kg_despues_trilla = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name="Precio por KG"
+        null=True,
+        blank=True,
+        verbose_name="KG después de trilla (Excelso)"
     )
-    total_amount = models.DecimalField(
-        max_digits=15,
+    porcentaje_reduccion_excelso = models.DecimalField(
+        max_digits=5,
         decimal_places=2,
+        null=True,
+        blank=True,
         editable=False,
-        verbose_name="Total"
+        verbose_name="Reducción Excelso (%)"
     )
 
     # Información de empaque y entrega
@@ -384,20 +392,38 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        # Calcular total automáticamente
-        self.total_amount = self.quantity_kg * self.price_per_kg
-
-        # Generar número de pedido si no existe
+        # Generar número de maquila si no existe
         if not self.order_number:
             self.order_number = self.generate_order_number()
+
+        # Establecer original_coffee_type si es una nueva maquila
+        if self._state.adding and not self.original_coffee_type:
+            self.original_coffee_type = self.coffee_type
+
+        # Calcular porcentaje de reducción y manejar kg_despues_trilla según la lógica
+        if self.original_coffee_type == 'cps' and self.coffee_type == 'excelso':
+            if self.quantity_kg and self.kg_despues_trilla is not None:
+                if self.quantity_kg > 0:  # Evitar división por cero
+                    reduction = self.quantity_kg - self.kg_despues_trilla
+                    self.porcentaje_reduccion_excelso = (reduction / self.quantity_kg) * 100
+                else:
+                    self.porcentaje_reduccion_excelso = Decimal(0.00)
+            else:
+                # Si es excelso pero no hay kg_despues_trilla (e.g., error o no se ha llenado)
+                self.kg_despues_trilla = None  # Asegurarse de que sea None si no es válido
+                self.porcentaje_reduccion_excelso = None
+        else:
+            # Si el café original no fue CPS, o si es CPS pero no se ha trillado a excelso
+            self.kg_despues_trilla = None
+            self.porcentaje_reduccion_excelso = None
 
         super().save(*args, **kwargs)
 
     def generate_order_number(self):
-        """Genera número único de pedido"""
+        """Genera número único de maquila"""
         import datetime
         today = datetime.date.today()
-        base_number = f"PED-{self.company.nit}-{today.strftime('%Y%m%d')}"
+        base_number = f"MAQ-{self.company.nit}-{today.strftime('%Y%m%d')}"
 
         # Buscar el último número del día
         last_order = Order.objects.filter(
@@ -441,7 +467,7 @@ class Order(models.Model):
         return new_state in valid_transitions.get(self.state, [])
 
     def __str__(self):
-        return f"Pedido {self.order_number} - {self.client.full_name}"
+        return f"Maquila {self.order_number} - {self.client.full_name}"
 
     # Transiciones FSM
     @transition(field=state, source='registered', target='in_toasting')
@@ -473,12 +499,12 @@ class Order(models.Model):
         pass
 
     class Meta:
-        verbose_name = "Pedido"
-        verbose_name_plural = "Pedidos"
-        ordering = ['-created_at']
+        verbose_name = "Maquila"
+        verbose_name_plural = "Maquilas"
+        ordering = ['created_at']
         permissions = [
-            ('can_manage_orders', 'Puede gestionar pedidos'),
-            ('can_view_all_orders', 'Puede ver todos los pedidos'),
+            ('can_manage_orders', 'Puede gestionar maquilas'),
+            ('can_view_all_orders', 'Puede ver todas las maquilas'),
         ]
 
 
@@ -504,7 +530,7 @@ class ToastingProcess(models.Model):
         Order,
         on_delete=models.CASCADE,
         related_name='toasting_process',
-        verbose_name="Pedido"
+        verbose_name="Maquila"
     )
 
     # Estado del proceso
@@ -692,12 +718,12 @@ class ToastingProcess(models.Model):
             self.save()
 
     def __str__(self):
-        return f"Tostión - Pedido {self.order.order_number}"
+        return f"Tostión - Maquila {self.order.order_number}"
 
     class Meta:
         verbose_name = "Proceso de Tostión"
         verbose_name_plural = "Procesos de Tostión"
-        ordering = ['-received_at']
+        ordering = ['received_at']
 
 
 class ProductionProcess(models.Model):
@@ -708,7 +734,7 @@ class ProductionProcess(models.Model):
         Order,
         on_delete=models.CASCADE,
         related_name='production_process',
-        verbose_name="Pedido"
+        verbose_name="Maquila"
     )
 
     # Fechas del proceso
@@ -770,12 +796,12 @@ class ProductionProcess(models.Model):
         return self.weight_check and self.packaging_check and self.labeling_check
 
     def __str__(self):
-        return f"Producción - Pedido {self.order.order_number}"
+        return f"Producción - Maquila {self.order.order_number}"
 
     class Meta:
         verbose_name = "Proceso de Producción"
         verbose_name_plural = "Procesos de Producción"
-        ordering = ['-started_at']
+        ordering = ['started_at']
 
 
 class Invoice(models.Model):
@@ -791,7 +817,7 @@ class Invoice(models.Model):
         Order,
         on_delete=models.CASCADE,
         related_name='invoice',
-        verbose_name="Pedido"
+        verbose_name="Maquila"
     )
     invoice_number = models.CharField(max_length=20, unique=True, verbose_name="Número de factura")
 
@@ -911,6 +937,10 @@ class Invoice(models.Model):
         verbose_name = "Factura"
         verbose_name_plural = "Facturas"
         ordering = ['-created_at']
+        permissions = [
+            ('can_manage_invoices', 'Puede gestionar facturas'),
+            ('can_view_invoices', 'Puede ver facturas'),
+        ]
 
 
 class ActivityLog(models.Model):
@@ -922,8 +952,8 @@ class ActivityLog(models.Model):
         ('logout', 'Cierre de sesión'),
         ('client_create', 'Creación de cliente'),
         ('client_update', 'Actualización de cliente'),
-        ('order_create', 'Creación de pedido'),
-        ('order_update', 'Actualización de pedido'),
+        ('maquila_create', 'Creación de maquila'),
+        ('maquila_update', 'Actualización de maquila'),
         ('toasting_start', 'Inicio de tostión'),
         ('toasting_complete', 'Tostión completada'),
         ('production_start', 'Inicio de producción'),

@@ -2,7 +2,7 @@
 {% load crispy_forms_tags %}
 {% load static %}
 
-{% block title %}Proceso de Tostión - Pedido #{{ order.order_number }}{% endblock %}
+{% block title %}Proceso de Tostión - Maquila #{{ maquila.order_number }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50">
@@ -45,7 +45,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">Proceso de Tostión Paso a Paso</h1>
-                        <p class="mt-1 text-gray-600">Pedido #{{ order.order_number }} - {{ order.client.full_name }}</p>
+                        <p class="mt-1 text-gray-600">Maquila #{{ maquila.order_number }} - {{ maquila.client.full_name }}</p>
                     </div>
                     <div class="flex items-center space-x-3">
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
@@ -80,8 +80,14 @@
                                 <i class="fas fa-weight text-white text-sm"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm text-gray-500">Cantidad</p>
-                                <p class="text-lg font-semibold text-gray-900">{{ order.quantity_kg }} kg</p>
+                                <p class="text-sm text-gray-500" id="cantidadLabel">Cantidad</p>
+                                <p class="text-lg font-semibold text-gray-900">
+                                    {% if maquila.original_coffee_type == 'cps' and maquila.coffee_type == 'excelso' and maquila.kg_despues_trilla %}
+                                        {{ maquila.kg_despues_trilla }} kg (Excelso)
+                                    {% else %}
+                                        {{ maquila.quantity_kg }} kg (Original)
+                                    {% endif %}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -92,7 +98,7 @@
                             </div>
                             <div class="ml-3">
                                 <p class="text-sm text-gray-500">Tipo de Café</p>
-                                <p class="text-lg font-semibold text-gray-900">{{ order.get_coffee_type_display }}</p>
+                                <p class="text-lg font-semibold text-gray-900">{{ maquila.get_coffee_type_display }}</p>
                             </div>
                         </div>
                     </div>
@@ -103,7 +109,7 @@
                             </div>
                             <div class="ml-3">
                                 <p class="text-sm text-gray-500">Fecha Comprometida</p>
-                                <p class="text-lg font-semibold text-gray-900">{{ order.committed_date|date:"d/m/Y" }}</p>
+                                <p class="text-lg font-semibold text-gray-900">{{ maquila.committed_date|date:"d/m/Y" }}</p>
                             </div>
                         </div>
                     </div>
@@ -137,7 +143,7 @@
                                 {{ form.received_quantity_kg }}
                                 <label class="block text-xs text-gray-500 mt-1">Cantidad Recibida (KG)</label>
                                 <div class="mt-1 text-sm text-gray-600">
-                                    Pedido original: <span class="font-medium">{{ order.quantity_kg }} kg</span>
+                                    Pedido original: <span class="font-medium">{{ maquila.quantity_kg }} kg</span>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg">
@@ -347,7 +353,7 @@
                                 {{ form.processed_quantity_kg }}
                                 <label class="block text-xs text-gray-500 mt-1">Kilos Finales Tostados</label>
                                 <div class="mt-1 text-sm text-gray-600">
-                                    Recibidos: <span class="font-medium">{{ toasting_process.received_quantity_kg|default:order.quantity_kg }} kg</span>
+                                    Recibidos: <span class="font-medium">{{ toasting_process.received_quantity_kg|default:maquila.quantity_kg }} kg</span>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg">
@@ -450,9 +456,6 @@
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
 <script>
     // FUNCIONES GLOBALES - Definidas fuera de DOMContentLoaded para estar disponibles inmediatamente
     window.handleNextStepClick = function() {
@@ -464,7 +467,7 @@
     // Función principal de manejo del botón siguiente
     function handleNextStep() {
         console.log('=== PROCESANDO BOTÓN SIGUIENTE ===');
-        const currentStep = '{{ current_step }}';
+        const currentStep = document.querySelector('input[name="current_step"]').value; // Obtener el paso actual del input oculto
         console.log('Paso actual:', currentStep);
 
         // Validar el paso actual antes de continuar
@@ -496,9 +499,10 @@
     // Función de validación del paso actual
     function validateCurrentStep() {
         console.log('🔍 Validando paso actual');
-        const currentStep = '{{ current_step }}';
+        const currentStep = document.querySelector('input[name="current_step"]').value; // Obtener el paso actual del input oculto
         let isValid = true;
         const errors = [];
+        const form = document.getElementById('tostionForm'); // Necesario para acceder a los elementos del formulario dentro de la validación.
 
         if (currentStep === 'reception') {
             const receivedInput = document.getElementById('id_received_quantity_kg');
@@ -554,6 +558,40 @@
                     errors.push('El tiempo estimado debe estar entre 5 y 60 minutos');
                     isValid = false;
                 }
+            }
+        } else if (currentStep === 'monitoring') { // Añadimos validaciones para el paso de monitoreo
+            const currentTempInput = document.getElementById('id_current_temperature_celsius');
+            if (currentTempInput) {
+                const currentTemp = parseFloat(currentTempInput.value);
+                if (isNaN(currentTemp) || currentTemp < 0) { // Asumiendo que la temperatura no puede ser negativa
+                    errors.push('La temperatura actual debe ser un número válido y positivo.');
+                    isValid = false;
+                }
+            }
+
+            const currentHumidityInput = document.getElementById('id_current_humidity_percentage');
+            if (currentHumidityInput) {
+                const currentHumidity = parseFloat(currentHumidityInput.value);
+                if (isNaN(currentHumidity) || currentHumidity < 0 || currentHumidity > 100) {
+                    errors.push('La humedad actual debe ser un número válido entre 0 y 100.');
+                    isValid = false;
+                }
+            }
+            // Agrega más validaciones si son necesarias para el paso de monitoreo
+        } else if (currentStep === 'completion') {
+            const processedQuantityInput = document.getElementById('id_processed_quantity_kg');
+            if (processedQuantityInput) {
+                const processed = parseFloat(processedQuantityInput.value);
+                if (!processed || processed <= 0) {
+                    errors.push('Los kilos procesados deben ser mayor a 0');
+                    isValid = false;
+                }
+            }
+
+            const finalQuality = document.getElementById('id_final_grain_quality');
+            if (finalQuality && !finalQuality.value) {
+                errors.push('Debe seleccionar la calidad final del grano');
+                isValid = false;
             }
         }
 
@@ -574,9 +612,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('current_step_number desde template:', '{{ current_step_number }}');
 
     const form = document.getElementById('tostionForm');
-    const currentStep = '{{ current_step }}';
-    const orderQuantity = parseFloat('{{ order.quantity_kg|default:0 }}');
-    const receivedQuantity = parseFloat('{{ toasting_process.received_quantity_kg|default:order.quantity_kg|default:0 }}');
+    const currentStep = '{{ current_step }}'; // Mantener esta variable para usos dentro de DOMContentLoaded si fuera necesario
+    const orderQuantity = parseFloat('{{ maquila.quantity_kg|default:0 }}');
+    const receivedQuantity = parseFloat('{{ toasting_process.received_quantity_kg|default:maquila.quantity_kg|default:0 }}');
     let timerInterval = null;
     let startTime = null;
     let qualitySamples = [];
@@ -591,79 +629,6 @@ document.addEventListener('DOMContentLoaded', function() {
         'experimental_10kg': { capacity: 10, name: 'Experimental 10kg' }
     };
 
-    // Función de validación del paso actual
-    function validateCurrentStep() {
-        console.log('🔍 Validando paso actual:', currentStep);
-        let isValid = true;
-        const errors = [];
-
-        if (currentStep === 'reception') {
-            const receivedInput = document.getElementById('id_received_quantity_kg');
-            console.log('Campo received_quantity_kg encontrado:', !!receivedInput);
-            if (receivedInput) {
-                const received = parseFloat(receivedInput.value);
-                console.log('Cantidad recibida:', received);
-                if (!received || received <= 0) {
-                    errors.push('La cantidad recibida debe ser mayor a 0');
-                    isValid = false;
-                }
-            } else {
-                errors.push('Campo de cantidad recibida no encontrado');
-                isValid = false;
-            }
-        } else if (currentStep === 'setup') {
-            const equipmentInput = document.getElementById('id_toasting_equipment');
-            console.log('Campo toasting_equipment encontrado:', !!equipmentInput);
-            if (equipmentInput) {
-                const equipment = equipmentInput.value;
-                console.log('Equipo seleccionado:', equipment);
-                if (!equipment) {
-                    errors.push('Debe seleccionar un equipo de tostión');
-                    isValid = false;
-                }
-            }
-
-            const initialTempInput = document.getElementById('id_initial_temperature_celsius');
-            if (initialTempInput) {
-                const initialTemp = parseFloat(initialTempInput.value);
-                console.log('Temperatura inicial:', initialTemp);
-                if (!initialTemp || initialTemp < 100 || initialTemp > 200) {
-                    errors.push('La temperatura inicial debe estar entre 100°C y 200°C');
-                    isValid = false;
-                }
-            }
-
-            const targetTempInput = document.getElementById('id_target_temperature_celsius');
-            if (targetTempInput) {
-                const targetTemp = parseFloat(targetTempInput.value);
-                console.log('Temperatura objetivo:', targetTemp);
-                if (!targetTemp || targetTemp < 150 || targetTemp > 250) {
-                    errors.push('La temperatura objetivo debe estar entre 150°C y 250°C');
-                    isValid = false;
-                }
-            }
-
-            const estimatedTimeInput = document.getElementById('id_estimated_time_minutes');
-            if (estimatedTimeInput) {
-                const estimatedTime = parseFloat(estimatedTimeInput.value);
-                console.log('Tiempo estimado:', estimatedTime);
-                if (!estimatedTime || estimatedTime < 5 || estimatedTime > 60) {
-                    errors.push('El tiempo estimado debe estar entre 5 y 60 minutos');
-                    isValid = false;
-                }
-            }
-        }
-
-        if (!isValid) {
-            console.log('❌ Errores de validación:', errors);
-            alert('Errores en el formulario:\n' + errors.join('\n'));
-        } else {
-            console.log('✅ Validación exitosa');
-        }
-
-        return isValid;
-    }
-
     // Navegación entre pasos
     function showStep(stepName) {
         console.log('Mostrando paso:', stepName);
@@ -677,37 +642,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (stepInput) {
                 stepInput.value = stepName;
             }
-        }
-    }
-
-    // Función para manejar el botón siguiente
-    function handleNextStep() {
-        console.log('=== BOTÓN SIGUIENTE CLICKEADO ===');
-        console.log('Paso actual:', currentStep);
-
-        // Validar el paso actual antes de continuar
-        if (!validateCurrentStep()) {
-            console.log('❌ Validación fallida, no se puede continuar');
-            return false;
-        }
-
-        const steps = ['reception', 'setup', 'monitoring', 'completion'];
-        const currentIndex = steps.indexOf(currentStep);
-        console.log('Índice del paso actual:', currentIndex);
-
-        if (currentIndex < steps.length - 1) {
-            const nextStep = steps[currentIndex + 1];
-            console.log('Siguiente paso:', nextStep);
-
-            // Redirigir directamente a la URL del siguiente paso
-            const currentUrl = window.location.pathname;
-            const nextUrl = `${currentUrl}?step=${nextStep}`;
-            console.log('Redirigiendo a:', nextUrl);
-            window.location.href = nextUrl;
-            return true;
-        } else {
-            console.log('❌ Ya estamos en el último paso');
-            return false;
         }
     }
 
@@ -739,9 +673,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // FUNCIONALIDADES ADICIONALES DEL FORMULARIO
-    console.log('=== INICIALIZANDO FUNCIONALIDADES ADICIONALES ===');
-
-    // FUNCIONALIDADES ADICIONALES
     console.log('=== INICIALIZANDO FUNCIONALIDADES ADICIONALES ===');
 
     // Cálculo de diferencia de cantidad (Paso 1)
@@ -878,9 +809,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function calculateYield() {
             const processed = parseFloat(processedQuantityInput.value) || 0;
-            if (processed > 0 && receivedQuantity > 0) {
-                const yieldPercentage = (processed / receivedQuantity) * 100;
-                calculatedYield.textContent = yieldPercentage.toFixed(1) + '%';
+            const receivedQuantityForYield = parseFloat(document.querySelector('input[name="received_quantity_kg"]').value) || parseFloat('{{ maquila.quantity_kg|default:0 }}'); // Obtener del input o del valor inicial
+            if (processed > 0 && receivedQuantityForYield > 0) {
+                const yieldPercentage = (processed / receivedQuantityForYield) * 100;
+                calculatedYield.textContent = yieldPercentage.toFixed(1) + ' %';
             } else {
                 calculatedYield.textContent = '--';
             }
@@ -894,15 +826,17 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         let isValid = true;
         const errors = [];
+        const currentStepInput = document.querySelector('input[name="current_step"]');
+        const currentStepForSubmit = currentStepInput ? currentStepInput.value : '';
 
         // Validaciones según el paso actual
-        if (currentStep === 'reception') {
-            const received = parseFloat(receivedQuantityInput?.value);
+        if (currentStepForSubmit === 'reception') {
+            const received = parseFloat(document.getElementById('id_received_quantity_kg')?.value);
             if (!received || received <= 0) {
                 errors.push('La cantidad recibida debe ser mayor a 0');
                 isValid = false;
             }
-        } else if (currentStep === 'setup') {
+        } else if (currentStepForSubmit === 'setup') {
             const equipment = document.getElementById('id_toasting_equipment')?.value;
             if (!equipment) {
                 errors.push('Debe seleccionar un equipo de tostión');
@@ -926,8 +860,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 errors.push('El tiempo estimado debe estar entre 5 y 60 minutos');
                 isValid = false;
             }
-        } else if (currentStep === 'completion') {
-            const processed = parseFloat(processedQuantityInput?.value);
+        } else if (currentStepForSubmit === 'monitoring') {
+            const currentTempInput = document.getElementById('id_current_temperature_celsius');
+            if (currentTempInput) {
+                const currentTemp = parseFloat(currentTempInput.value);
+                if (isNaN(currentTemp) || currentTemp < 0) {
+                    errors.push('La temperatura actual debe ser un número válido y positivo.');
+                    isValid = false;
+                }
+            }
+
+            const currentHumidityInput = document.getElementById('id_current_humidity_percentage');
+            if (currentHumidityInput) {
+                const currentHumidity = parseFloat(currentHumidityInput.value);
+                if (isNaN(currentHumidity) || currentHumidity < 0 || currentHumidity > 100) {
+                    errors.push('La humedad actual debe ser un número válido entre 0 y 100.');
+                    isValid = false;
+                }
+            }
+        } else if (currentStepForSubmit === 'completion') {
+            const processed = parseFloat(document.getElementById('id_processed_quantity_kg')?.value);
             if (!processed || processed <= 0) {
                 errors.push('Los kilos procesados deben ser mayor a 0');
                 isValid = false;
@@ -953,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (confirmModal && viewOrderBtn) {
         // El modal se muestra desde la vista después del submit exitoso
         viewOrderBtn.addEventListener('click', function() {
-            window.location.href = '{% url "core:pedido_list" %}';
+            window.location.href = '{% url "core:maquila_list" %}';
         });
     }
 

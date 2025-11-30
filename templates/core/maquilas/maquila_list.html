@@ -2,7 +2,7 @@
 {% load crispy_forms_tags %}
 {% load static %}
 
-{% block title %}Lista de Pedidos - {{ company.name }}{% endblock %}
+{% block title %}Lista de Maquilas - {{ company.name }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50">
@@ -23,7 +23,7 @@
                         <li>
                             <div class="flex items-center">
                                 <i class="fas fa-chevron-right text-gray-400"></i>
-                                <span class="ml-4 text-gray-900 font-medium">Lista de Pedidos</span>
+                                <span class="ml-4 text-gray-900 font-medium">Lista de Maquilas</span>
                             </div>
                         </li>
                     </ol>
@@ -37,13 +37,13 @@
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Lista de Pedidos</h1>
-                    <p class="mt-2 text-gray-600">Gestiona todos los pedidos de {{ company.name }}</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Lista de Maquilas</h1>
+                    <p class="mt-2 text-gray-600">Gestiona todas las maquilas de {{ company.name }}</p>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a href="{% url 'core:pedido_create' %}" class="btn-coffee text-lg px-6 py-3 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                    <a href="{% url 'core:maquila_create' %}" class="btn-coffee text-lg px-6 py-3 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
                         <i class="fas fa-plus-circle mr-2"></i>
-                        Nuevo Pedido
+                        Nueva Maquila
                     </a>
                 </div>
             </div>
@@ -85,12 +85,12 @@
                     <div class="md:col-span-2 lg:col-span-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
                         <div class="flex space-x-2">
-                            <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Buscar por número de pedido, cliente..." class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Buscar por número de maquila, cliente..." class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 <i class="fas fa-search mr-2"></i>
                                 Filtrar
                             </button>
-                            <a href="{% url 'core:pedido_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <a href="{% url 'core:maquila_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 <i class="fas fa-times mr-2"></i>
                                 Limpiar
                             </a>
@@ -110,8 +110,8 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-2xl font-bold text-gray-900">{{ total_orders }}</h3>
-                        <p class="text-gray-600">Total Pedidos</p>
+                        <h3 class="text-2xl font-bold text-gray-900">{{ total_maquilas }}</h3>
+                        <p class="text-gray-600">Total Maquilas</p>
                     </div>
                 </div>
             </div>
@@ -123,8 +123,8 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-2xl font-bold text-gray-900">{{ pending_orders }}</h3>
-                        <p class="text-gray-600">Pedidos Pendientes</p>
+                        <h3 class="text-2xl font-bold text-gray-900">{{ pending_maquilas }}</h3>
+                        <p class="text-gray-600">Maquilas Pendientes</p>
                     </div>
                 </div>
             </div>
@@ -136,25 +136,25 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-2xl font-bold text-gray-900">{{ completed_orders }}</h3>
-                        <p class="text-gray-600">Pedidos Completados</p>
+                        <h3 class="text-2xl font-bold text-gray-900">{{ completed_maquilas }}</h3>
+                        <p class="text-gray-600">Maquilas Completadas</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Lista de Pedidos -->
+        <!-- Lista de Maquilas -->
         <div class="bg-white shadow-lg rounded-lg overflow-hidden">
             <div class="px-6 py-4 bg-gray-50 border-b">
-                <h3 class="text-lg font-medium text-gray-900">Pedidos ({{ orders|length }})</h3>
+                <h3 class="text-lg font-medium text-gray-900">Maquilas ({{ maquilas|length }})</h3>
             </div>
 
-            {% if orders %}
+            {% if maquilas %}
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pedido</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maquila</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
@@ -163,54 +163,67 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            {% for order in orders %}
+                            {% for maquila in maquilas %}
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ order.order_number }}</div>
-                                        <div class="text-sm text-gray-500">{{ order.quantity_kg }} KG</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ maquila.order_number }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ order.client.first_name }} {{ order.client.last_name }}</div>
-                                        <div class="text-sm text-gray-500">{{ order.client.document_number }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ maquila.client.first_name }} {{ maquila.client.last_name }}</div>
+                                        <div class="text-sm text-gray-500">{{ maquila.client.document_number }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ order.get_coffee_type_display }}</div>
-                                        <div class="text-sm text-gray-500">${{ order.price_per_kg }}/KG</div>
+                                        <div class="text-sm text-gray-900">{{ maquila.get_coffee_type_display }}</div>
+                                        <div class="text-sm text-gray-500">
+                                            {% if maquila.original_coffee_type == 'cps' and maquila.coffee_type == 'excelso' and maquila.kg_despues_trilla is not None %}
+                                                {{ maquila.kg_despues_trilla }} kg (Excelso)
+                                                {% if maquila.porcentaje_reduccion_excelso is not None %}
+                                                    <span class="text-xs text-blue-600">(Reducción: {{ maquila.porcentaje_reduccion_excelso|floatformat:2 }}%)</span>
+                                                {% endif %}
+                                            {% else %}
+                                                {{ maquila.quantity_kg }} kg (Original)
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-sm text-gray-500">${{ maquila.price_per_kg }}/KG</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            {% if order.state == 'registered' %}bg-blue-100 text-blue-800
-                                            {% elif order.state == 'in_toasting' %}bg-orange-100 text-orange-800
-                                            {% elif order.state == 'toasting_complete' %}bg-yellow-100 text-yellow-800
-                                            {% elif order.state == 'in_production' %}bg-purple-100 text-purple-800
-                                            {% elif order.state == 'ready_for_billing' %}bg-green-100 text-green-800
-                                            {% elif order.state == 'billed' %}bg-indigo-100 text-indigo-800
-                                            {% elif order.state == 'delivered' %}bg-gray-100 text-gray-800
+                                            {% if maquila.state == 'registered' %}bg-blue-100 text-blue-800
+                                            {% elif maquila.state == 'in_toasting' %}bg-orange-100 text-orange-800
+                                            {% elif maquila.state == 'toasting_complete' %}bg-yellow-100 text-yellow-800
+                                            {% elif maquila.state == 'in_production' %}bg-purple-100 text-purple-800
+                                            {% elif maquila.state == 'ready_for_billing' %}bg-green-100 text-green-800
+                                            {% elif maquila.state == 'billed' %}bg-indigo-100 text-indigo-800
+                                            {% elif maquila.state == 'delivered' %}bg-gray-100 text-gray-800
                                             {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                            {{ order.get_state_display }}
+                                            {{ maquila.get_state_display }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ order.created_at|date:"d/m/Y" }}
+                                        {{ maquila.created_at|date:"d/m/Y" }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex space-x-2">
-                                            <button onclick="showOrderDetail({{ order.id }})"
+                                            <button onclick="showOrderDetail({{ maquila.id }})"
                                                     class="text-blue-600 hover:text-blue-900">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            {% if order.state == 'registered' %}
-                                                <a href="{% url 'core:tostion_create' order.id %}"
+                                            <a href="{% url 'core:maquila_update' maquila.id %}"
+                                               class="text-gray-600 hover:text-gray-900">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if maquila.state == 'registered' %}
+                                                <a href="{% url 'core:tostion_create' maquila.id %}"
                                                    class="text-orange-600 hover:text-orange-900">
                                                     <i class="fas fa-fire"></i>
                                                 </a>
-                                            {% elif order.state == 'toasting_complete' %}
-                                                <a href="{% url 'core:produccion_create' order.id %}"
+                                            {% elif maquila.state == 'toasting_complete' %}
+                                                <a href="{% url 'core:produccion_create' maquila.id %}"
                                                    class="text-purple-600 hover:text-purple-900">
                                                     <i class="fas fa-boxes"></i>
                                                 </a>
-                                            {% elif order.state == 'ready_for_billing' %}
-                                                <a href="{% url 'core:facturacion_create' order.id %}"
+                                            {% elif maquila.state == 'ready_for_billing' %}
+                                                <a href="{% url 'core:facturacion_create' maquila.id %}"
                                                    class="text-green-600 hover:text-green-900">
                                                     <i class="fas fa-file-invoice-dollar"></i>
                                                 </a>
@@ -277,11 +290,11 @@
                     <div class="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
                         <i class="fas fa-shopping-cart text-4xl text-gray-400"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No hay pedidos</h3>
-                    <p class="text-gray-500 mb-6">Aún no se han registrado pedidos en el sistema.</p>
-                    <a href="{% url 'core:pedido_create' %}" class="btn-coffee text-lg px-6 py-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No hay maquilas</h3>
+                    <p class="text-gray-500 mb-6">Aún no se han registrado maquilas en el sistema.</p>
+                    <a href="{% url 'core:maquila_create' %}" class="btn-coffee text-lg px-6 py-3">
                         <i class="fas fa-plus-circle mr-2"></i>
-                        Crear Primer Pedido
+                        Crear Primera Maquila
                     </a>
                 </div>
             {% endif %}
@@ -289,12 +302,12 @@
     </div>
 </div>
 
-<!-- Modal de Detalle de Pedido -->
+<!-- Modal de Detalle de Maquila -->
 <div id="orderDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Detalle del Pedido</h3>
+                <h3 class="text-lg font-medium text-gray-900">Detalle de la Maquila</h3>
                 <button onclick="closeOrderDetailModal()" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times"></i>
                 </button>
@@ -311,7 +324,7 @@
 {% block extra_scripts %}
 <script>
 function showOrderDetail(orderId) {
-    fetch(`/ajax/pedido/${orderId}/detalle/`)
+    fetch(`/ajax/maquila/${orderId}/detalle/`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -322,14 +335,14 @@ function showOrderDetail(orderId) {
             const content = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h4 class="font-semibold text-gray-900 mb-3">Información del Pedido</h4>
+                        <h4 class="font-semibold text-gray-900 mb-3">Información de la Maquila</h4>
                         <div class="space-y-2">
                             <p><strong>Número:</strong> ${data.order_number}</p>
                             <p><strong>Estado:</strong> ${data.state}</p>
                             <p><strong>Fecha:</strong> ${data.created_at}</p>
                             <p><strong>Cantidad:</strong> ${data.quantity_kg} KG</p>
-                            <p><strong>Precio/KG:</strong> $${data.price_per_kg}</p>
-                            <p><strong>Total:</strong> $${data.total_amount}</p>
+                            ${data.kg_despues_trilla ? `<p><strong>KG después de trilla (Excelso):</strong> ${data.kg_despues_trilla} KG</p>` : ''}
+                            ${data.porcentaje_reduccion_excelso ? `<p><strong>Reducción Excelso (%):</strong> ${data.porcentaje_reduccion_excelso}%</p>` : ''}
                         </div>
                     </div>
                     <div>
@@ -349,7 +362,7 @@ function showOrderDetail(orderId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al cargar el detalle del pedido');
+            alert('Error al cargar el detalle de la maquila');
         });
 }
 

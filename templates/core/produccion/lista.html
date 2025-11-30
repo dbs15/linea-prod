@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Pedidos para Producción - {{ company.name }}{% endblock %}
+{% block title %}Maquilas para Producción - {{ company.name }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50">
@@ -36,8 +36,8 @@
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Pedidos para Producción</h1>
-                    <p class="mt-2 text-gray-600">Gestiona el empaque y producción final de los pedidos</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Maquilas para Producción</h1>
+                    <p class="mt-2 text-gray-600">Gestiona el empaque y producción final de las maquilas</p>
                 </div>
                 <div class="flex items-center space-x-3">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
@@ -125,16 +125,16 @@
             </div>
         </div>
 
-        <!-- Lista de Pedidos -->
+        <!-- Lista de Maquilas -->
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
             <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Pedidos Disponibles</h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500">Selecciona un pedido para iniciar el proceso de producción</p>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Maquilas Disponibles</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Selecciona una maquila para iniciar el proceso de producción</p>
             </div>
 
             {% if object_list %}
                 <ul class="divide-y divide-gray-200">
-                    {% for order in object_list %}
+                    {% for maquila in object_list %}
                     <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
@@ -146,28 +146,28 @@
                                 <div class="ml-4">
                                     <div class="flex items-center">
                                         <h4 class="text-sm font-medium text-gray-900">
-                                            Pedido #{{ order.order_number }}
+                                            Maquila #{{ maquila.order_number }}
                                         </h4>
                                         <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            {% if order.state == 'in_production' %}
+                                            {% if maquila.state == 'in_production' %}
                                                 bg-yellow-100 text-yellow-800
                                             {% else %}
                                                 bg-gray-100 text-gray-800
                                             {% endif %}">
-                                            {{ order.get_state_display }}
+                                            {{ maquila.get_state_display }}
                                         </span>
                                     </div>
                                     <div class="text-sm text-gray-500">
-                                        <span class="font-medium">{{ order.client.full_name }}</span>
-                                        • {{ order.final_quantity_kg|default:order.quantity_kg }}kg tostado
-                                        • {{ order.get_coffee_type_display }}
+                                        <span class="font-medium">{{ maquila.client.full_name }}</span>
+                                        • {{ maquila.final_quantity_kg|default:maquila.quantity_kg }}kg tostado
+                                        • {{ maquila.get_coffee_type_display }}
                                     </div>
                                 </div>
                             </div>
 
                             <div class="flex items-center space-x-2">
                                 <!-- Indicador de proceso -->
-                                {% if order.production_process %}
+                                {% if maquila.production_process %}
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <i class="fas fa-check-circle mr-1"></i>
                                         Procesado
@@ -181,20 +181,20 @@
 
                                 <!-- Acciones -->
                                 <div class="flex items-center space-x-2">
-                                    <button onclick="showOrderDetail({{ order.id }})"
+                                    <button onclick="showOrderDetail({{ maquila.id }})"
                                             class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                                         <i class="fas fa-eye mr-1"></i>
                                         Ver
                                     </button>
 
-                                    {% if not order.production_process %}
-                                        <a href="{% url 'core:produccion_create' order.id %}"
+                                    {% if not maquila.production_process %}
+                                        <a href="{% url 'core:produccion_create' maquila.id %}"
                                            class="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700">
                                             <i class="fas fa-box mr-1"></i>
                                             Iniciar Producción
                                         </a>
                                     {% else %}
-                                        <button onclick="showProcessDetail({{ order.production_process.id }})"
+                                        <button onclick="showProcessDetail({{ maquila.production_process.id }})"
                                                 class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                                             <i class="fas fa-info-circle mr-1"></i>
                                             Ver Proceso
@@ -211,12 +211,12 @@
                     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-box text-gray-400 text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No hay pedidos pendientes</h3>
-                    <p class="text-gray-500 mb-6">Todos los pedidos han sido procesados o no hay pedidos en estado de producción.</p>
-                    <a href="{% url 'core:pedido_list' %}"
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No hay maquilas pendientes</h3>
+                    <p class="text-gray-500 mb-6">Todas las maquilas han sido procesadas o no hay maquilas en estado de producción.</p>
+                    <a href="{% url 'core:maquila_list' %}"
                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
                         <i class="fas fa-arrow-left mr-2"></i>
-                        Ver Todos los Pedidos
+                        Ver Todas las Maquilas
                     </a>
                 </div>
             {% endif %}
@@ -224,12 +224,12 @@
     </div>
 </div>
 
-<!-- Modal de Detalle de Pedido -->
+<!-- Modal de Detalle de Maquila -->
 <div id="orderDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Detalle del Pedido</h3>
+                <h3 class="text-lg font-medium text-gray-900">Detalle de la Maquila</h3>
                 <button onclick="closeModal('orderDetailModal')"
                         class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times"></i>
@@ -253,17 +253,20 @@ function showOrderDetail(orderId) {
     content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>';
     modal.classList.remove('hidden');
 
-    fetch(`{% url 'core:pedido_detalle_ajax' orderId %}`)
+    fetch(`{% url 'core:maquila_detalle_ajax' orderId %}`)
         .then(response => response.json())
         .then(data => {
             content.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h4 class="font-medium text-gray-900 mb-4">Información del Pedido</h4>
+                        <h4 class="font-medium text-gray-900 mb-4">Información de la Maquila</h4>
                         <dl class="space-y-2">
                             <div><dt class="text-sm text-gray-500">Número:</dt><dd class="text-sm font-medium">${data.order_number}</dd></div>
                             <div><dt class="text-sm text-gray-500">Cliente:</dt><dd class="text-sm font-medium">${data.client.name}</dd></div>
                             <div><dt class="text-sm text-gray-500">Cantidad:</dt><dd class="text-sm font-medium">${data.quantity_kg} kg</dd></div>
+                            ${data.kg_despues_trilla ? `<div><dt class="text-sm text-gray-500">KG después de trilla (Excelso):</dt><dd class="text-sm font-medium">${data.kg_despues_trilla} kg</dd></div>` : ''}
+                            ${data.porcentaje_reduccion_excelso ? `<div><dt class="text-sm text-gray-500">Reducción Excelso (%):</dt><dd class="text-sm font-medium">${data.porcentaje_reduccion_excelso}%</dd></div>` : ''}
+                            <div><dt class="text-sm text-gray-500">Tipo de Café:</dt><dd class="text-sm font-medium">${data.coffee_type}</dd></div>
                             <div><dt class="text-sm text-gray-500">Estado:</dt><dd class="text-sm font-medium">${data.state}</dd></div>
                         </dl>
                     </div>
